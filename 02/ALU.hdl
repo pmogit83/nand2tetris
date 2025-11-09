@@ -1,0 +1,122 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/02/ALU.hdl
+
+/**
+ * The ALU (Arithmetic Logic Unit).
+ * Computes one of the following functions:
+ * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
+ * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
+ * according to 6 input bits denoted zx,nx,zy,ny,f,no.
+ * In addition, the ALU computes two 1-bit outputs:
+ * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
+ * if the ALU output < 0, ng is set to 1; otherwise ng is set to 0.
+ */
+
+// Implementation: the ALU logic manipulates the x and y inputs
+// and operates on the resulting values, as follows:
+// if (zx == 1) set x = 0        // 16-bit constant
+// if (nx == 1) set x = !x       // bitwise not
+// if (zy == 1) set y = 0        // 16-bit constant
+// if (ny == 1) set y = !y       // bitwise not
+// if (f == 1)  set out = x + y  // integer 2's complement addition
+// if (f == 0)  set out = x & y  // bitwise and
+// if (no == 1) set out = !out   // bitwise not
+// if (out == 0) set zr = 1
+// if (out < 0) set ng = 1
+
+CHIP ALU {
+	IN  
+		x[16], y[16],  // 16-bit inputs        
+		zx, // zero the x input?
+		nx, // negate the x input?
+		zy, // zero the y input?
+		ny, // negate the y input?
+		f,  // compute out = x + y (if 1) or x & y (if 0)
+		no; // negate the out output?
+
+	OUT 
+		out[16], // 16-bit output
+		zr, // 1 if (out == 0), 0 otherwise
+		ng; // 1 if (out < 0),  0 otherwise
+
+	PARTS:
+	// Put you code here:
+	 
+	// __ Constantes true et false sur 16 bits :	
+	Not16(in[0..15]=true, out=false16);
+	Not16(in[0..15]=false, out=true16);
+
+	// __ Si zx = 1, x1 = 0 ; sinon, x1 = x :
+	Mux16(a=x, b=false16, sel=zx, out=x1);
+
+	// __ Si nx = 1, initx = x2 = Not(x1) ; sinon, initx = x1 :
+	Not16(in=x1, out=x2);
+	Mux16(a=x1, b=x2, sel=nx, out=initx);
+
+	// __ Si zy = 1, y1 = 0 ; sinon, y1 = y :
+	Mux16(a=y, b=false16, sel=zy, out=y1);
+
+	// __ Si ny = 1, inity = y2 = Not(y1) ; sinon, inity = y1 :
+	Not16(in=y1, out=y2);
+	Mux16(a=y1, b=y2, sel=ny, out=inity);
+
+	// __ Calcul de x + y et de x And y :
+	Add16(a=initx, b=inity, out=sumxy);
+	And16(a=initx, b=inity, out=andxy);
+
+	// __ Choix entre "+" et "And" :
+	Mux16(a=andxy, b=sumxy, sel=f, out=outf);
+
+	// __ Si no = 1, outtmp = Not(outf) ; sinon, outtmp = outf :
+	Not16(in=outf, out=notoutf);
+	Mux16(a=outf, b=notoutf, sel=no, out=outtmp);
+
+	// __ Si outtmp < 0, ng = 1 ; sinon, ng = 0.  
+	// Sachant que : outtmp < 0 <=> outtmp[15] = 1
+	// Si outtmp[15] = 1, bPositif = Not(1) = 0 :
+	Not16(in=outtmp, out[15]=bPositif);
+	Not(in=bPositif, out=ng);
+
+	// __ Si outtmp = 0, zr = 1 ; sinon, zr = 0.
+	Or16(a=outtmp, b=false16, out[0]=b0);
+	Or16(a=outtmp, b=false16, out[1]=b1);
+	Or16(a=outtmp, b=false16, out[2]=b2);
+	Or16(a=outtmp, b=false16, out[3]=b3);
+	Or16(a=outtmp, b=false16, out[4]=b4);
+	Or16(a=outtmp, b=false16, out[5]=b5);
+	Or16(a=outtmp, b=false16, out[6]=b6);
+	Or16(a=outtmp, b=false16, out[7]=b7);
+	Or16(a=outtmp, b=false16, out[8]=b8);
+	Or16(a=outtmp, b=false16, out[9]=b9);
+	Or16(a=outtmp, b=false16, out[10]=b10);
+	Or16(a=outtmp, b=false16, out[11]=b11);
+	Or16(a=outtmp, b=false16, out[12]=b12);
+	Or16(a=outtmp, b=false16, out[13]=b13);
+	Or16(a=outtmp, b=false16, out[14]=b14);
+	Or16(a=outtmp, b=false16, out[15]=b15);
+
+	Or(a=b0, b=b1, out=bb0);
+	Or(a=b2, b=b3, out=bb2);
+	Or(a=b4, b=b5, out=bb4);
+	Or(a=b6, b=b7, out=bb6);
+	Or(a=b8, b=b9, out=bb8);
+	Or(a=b10, b=b11, out=bb10);
+	Or(a=b12, b=b13, out=bb12);
+	Or(a=b14, b=b15, out=bb14);
+	
+	Or(a=bb0, b=bb2, out=bbb0);
+	Or(a=bb4, b=bb6, out=bbb4);
+	Or(a=bb8, b=bb10, out=bbb8);
+	Or(a=bb12, b=bb14, out=bbb12);
+
+	Or(a=bbb0, b=bbb4, out=bbbb0);
+	Or(a=bbb8, b=bbb12, out=bbbb1);
+	Or(a=bbbb0, b=bbbb1, out=notzr);
+	Not(in=notzr, out=zr);
+
+	// __ sel = 0 => out = a = outtmp :
+	Mux16(a=outtmp, b=false16, sel=false, out=out);
+
+}
