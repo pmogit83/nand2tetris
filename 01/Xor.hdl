@@ -17,8 +17,19 @@ CHIP Xor {
 	// a Xor b = (a Nand (a Nand b)) Nand (b Nand (a Nand b))
 	//         = (a Nand anandb) Nand (b Nand anandb)
 	//         = (n1) Nand (n2)
-    Nand(a=a, b=b, out=anandb);
-    Nand(a=a, b=anandb, out=n1);
-    Nand(a=b, b=anandb, out=n2);
-    Nand(a=n1, b=n2, out=out);
+	Nand(a=a, b=b, out=anandb);
+	Nand(a=a, b=anandb, out=n1);
+	Nand(a=b, b=anandb, out=n2);
+	Nand(a=n1, b=n2, out=out);
+
+	// Alternative :
+	// a Xor b = (a and not(b)) or (b and not(a))
+	//         = (a and notb) or (b and nota)
+	//         = (anotb) or (bnota)
+	//	Not(in=b, out=notb);
+	//	Not(in=a, out=nota);
+	//	And(a=a, b=notb, out=anotb);
+	//	And(a=b, b=nota, out=bnota);
+	//	Or(a=anotb, b=bnota, out=out);
+
 }
