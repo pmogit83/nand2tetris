@@ -14,19 +14,7 @@ CHIP And16 {
 
     PARTS:
     // Put your code here:
-    // a And b = (a Nand b) Nand (a Nand b) = (n1) Nand (n1)
-    // Nand(a=a, b=b, out=n1);
-    // Nand(a=n1, b=n1, out=out);
 
-
-	// KO : Nand(a[0..15]=a1, b[0..15]=b1, out=n1);
-	
-	// Or(a=neq1, b=neq2, out=outOr);  // <=> outOr = Or(neq1, neq2)
-	// OK : Nand(a=a[0], b=b[0], out=nand0);
-	// Nand(a=a[0..15], b=b[0..15], out=nand0);
-
-
-	// Nand(a[0..15]=n1, b[0..15]=n1, out[0..15]=out);
 	And(a=a[0], b=b[0], out=out[0]);
 	And(a=a[1], b=b[1], out=out[1]);
 	And(a=a[2], b=b[2], out=out[2]);
