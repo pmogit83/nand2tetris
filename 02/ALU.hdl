@@ -44,42 +44,41 @@ CHIP ALU {
 	PARTS:
 	// Put you code here:
 	 
-	// __ Constantes true et false sur 16 bits :	
+	// __ 16-bits false constant :	
 	Not16(in[0..15]=true, out=false16);
-	Not16(in[0..15]=false, out=true16);
 
-	// __ Si zx = 1, x1 = 0 ; sinon, x1 = x :
+	// __ If zx = 1, x1 = 0 ; else, x1 = x :
 	Mux16(a=x, b=false16, sel=zx, out=x1);
 
-	// __ Si nx = 1, initx = x2 = Not(x1) ; sinon, initx = x1 :
+	// __ If nx = 1, initx = x2 = Not(x1) ; else, initx = x1 :
 	Not16(in=x1, out=x2);
 	Mux16(a=x1, b=x2, sel=nx, out=initx);
 
-	// __ Si zy = 1, y1 = 0 ; sinon, y1 = y :
+	// __ If zy = 1, y1 = 0 ; else, y1 = y :
 	Mux16(a=y, b=false16, sel=zy, out=y1);
 
-	// __ Si ny = 1, inity = y2 = Not(y1) ; sinon, inity = y1 :
+	// __ If ny = 1, inity = y2 = Not(y1) ; else, inity = y1 :
 	Not16(in=y1, out=y2);
 	Mux16(a=y1, b=y2, sel=ny, out=inity);
 
-	// __ Calcul de x + y et de x And y :
+	// __ "x + y" and "x And y" computations :
 	Add16(a=initx, b=inity, out=sumxy);
 	And16(a=initx, b=inity, out=andxy);
 
-	// __ Choix entre "+" et "And" :
+	// __ Choosing between "+" and "And" :
 	Mux16(a=andxy, b=sumxy, sel=f, out=outf);
 
-	// __ Si no = 1, outtmp = Not(outf) ; sinon, outtmp = outf :
+	// __ If no = 1, outtmp = Not(outf) ; else, outtmp = outf :
 	Not16(in=outf, out=notoutf);
 	Mux16(a=outf, b=notoutf, sel=no, out=outtmp);
 
-	// __ Si outtmp < 0, ng = 1 ; sinon, ng = 0.  
-	// Sachant que : outtmp < 0 <=> outtmp[15] = 1
-	// Si outtmp[15] = 1, bPositif = Not(1) = 0 :
-	Not16(in=outtmp, out[15]=bPositif);
-	Not(in=bPositif, out=ng);
+	// __ If outtmp < 0, ng = 1 ; else, ng = 0.  
+	// Knowing that : outtmp < 0 <=> outtmp[15] = 1
+	// If outtmp[15] = 1, bPositive = Not(1) = 0 :
+	Not16(in=outtmp, out[15]=bPositive);
+	Not(in=bPositive, out=ng);
 
-	// __ Si outtmp = 0, zr = 1 ; sinon, zr = 0.
+	// __ If outtmp = 0, zr = 1 ; else, zr = 0.
 	Or16(a=outtmp, b=false16, out[0]=b0);
 	Or16(a=outtmp, b=false16, out[1]=b1);
 	Or16(a=outtmp, b=false16, out[2]=b2);
