@@ -1,0 +1,46 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/RAM8.hdl
+
+/**
+ * A 16-bit counter with load and reset control bits.
+ * if      (reset[t] == 1) out[t+1] = 0
+ * else if (load[t] == 1)  out[t+1] = in[t]
+ * else if (inc[t] == 1)   out[t+1] = out[t] + 1  (integer addition)
+ * else                    out[t+1] = out[t]
+ */
+
+CHIP PC {
+    IN in[16], load, reset, inc;
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+	// __ Si reset = 1, on choisira zero comme sortie :
+	Not16(in=true, out=zero);
+	// __ Calcul de Reg + 1 (NB : regOut est déterminé plus bas !) :
+ 	Inc16(in=regOut, out=regPlusUn);
+	// __ Construire un sélecteur à 3 bits :
+	// 	reset 	load	inc		regLoad		regIn
+	//	-----	----	-----	-------		---------------
+	// 	0		0		0		0			Sans importance
+	// 	0		0		1		1			regPlusUn
+	// 	0		1		0		1			in
+	// 	0		1		1		1			in
+	// 	1		0		0		0			zero
+	// 	1		0		1		1			zero
+	// 	1		1		0		1			zero
+	// 	1		1		1		1			zero
+	Or16(a=false, b[0]=inc, b[1]=load, b[2]=reset, b[3..15]=false, out[0..2]=triSel);
+	// __ On choisit regIn en fonction de triSel : 000 => in (sans importance), 
+	// 001 => regPlusUn etc...
+	Mux8Way16(a=in, b=regPlusUn, c=in, d=in, e=zero, f=zero, g=zero, h=zero, sel=triSel, out=regIn);
+	// __ regLoad = reset Or load Or inc :
+	Or(a=reset, b=load, out=rOrl);
+	Or(a=rOrl, b=inc, out=regLoad);
+	// __ Alimentation du registre suivant regLoad (NB : on peut émettre la 
+	// sortie plusieurs fois !) : 
+	Register(in=regIn, load=regLoad, out=regOut, out=out);
+
+}

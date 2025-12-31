@@ -1,0 +1,63 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/RAM8.hdl
+
+/**
+ * ************************************************************ PERSO :
+ * Memory of 2 registers, 16 bit-wide. Out holds the value stored in the 
+ * register selected : 
+ * - first register if sel = 00, 
+ * - second register if sel = 01,
+ * - third register if sel = 10,
+ * - fourth register if sel = 11,
+ * If load==1, then the in value is loaded into the selected register (the 
+ * loaded value will be emitted to out from the next time step onward).
+ */
+
+CHIP RAM4 {
+    IN in[16], load, sel[2];
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+
+/*
+	load	sel		loadr0	loadr1	loadr2	loadr3
+	----------------------------------------------------
+	true	00		true	false	false	false
+	true	01		false	true	false	false
+	true	10		false	false	true	false
+	true	11		false	false	false	true
+	false	00		false	false	false	false
+	false	01		false	false	false	false
+	false	10		false	false	false	false
+	false	11		false	false	false	false
+
+	loadr0 = load And (sel=00)
+	loadr1 = load And (sel=01)
+	loadr2 = load And (sel=10)
+	loadr3 = load And (sel=11)
+*/
+
+	// __ Si sel = 00, selr0 = true
+	// __ Si sel = 01, selr1 = true
+	// __ Si sel = 10, selr2 = true
+	// __ Si sel = 11, selr3 = true
+	DMux4Way(in=true, sel=sel, a=selr0, b=selr1, c=selr2, d=selr3);
+
+	And(a=load, b=selr0, out=loadr0);
+	And(a=load, b=selr1, out=loadr1);
+	And(a=load, b=selr2, out=loadr2);
+	And(a=load, b=selr3, out=loadr3);
+
+	Register(in=in, load=loadr0, out=r0);
+	Register(in=in, load=loadr1, out=r1);
+	Register(in=in, load=loadr2, out=r2);
+	Register(in=in, load=loadr3, out=r3);
+
+	// __ Sortie en fonction de sel :
+	// Mux16(a=r0, b=r1, sel=sel, out=out);
+	Mux4Way16(a=r0, b=r1, c=r2, d=r3, sel=sel, out=out);
+
+}

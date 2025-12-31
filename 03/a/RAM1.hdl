@@ -1,0 +1,29 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/RAM8.hdl
+
+/**
+ * ************************************************************ PERSO :
+ * Memory of 1 register, 16 bit-wide. Out holds the value
+ * stored in the register. If load==1, then the in value is loaded into the 
+ * register (the loaded value will be emitted to out from the next time step 
+ * onward).
+ */
+
+CHIP RAM1 {
+    // IN in[16], load, address[3];
+    IN in[16], load;
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+
+	//  If load[t] == 1 then out[t+1] = in[t]
+	//  else out does not change
+	//     IN in[16], load;
+	//     OUT out[16];
+	// --------------------------------------------
+	Register(in=in, load=load, out=out);
+
+}

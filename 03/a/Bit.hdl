@@ -1,0 +1,36 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/Bit.hdl
+
+/**
+ * 1-bit register:
+ * If load[t] == 1 then out[t+1] = in[t]
+ *                 else out does not change (out[t+1] = out[t])
+ */
+
+CHIP Bit {
+    IN in, load;
+    OUT out;
+
+    PARTS:
+    // Put your code here:
+	// __ Sources : Ch. 3 p. 43, fig. 3.1 + Annexe 2 HDL, A2.4 § feedback loops
+	
+	// Ce code fonctionne bien que dffOut ne soit pas initialisé ! Ou alors 
+	// initialisé à 0 par défaut. Il est tiré directement du schéma p. 43 et 
+	// des remarques suivantes :
+	// - On a 3 entrées pour Mux : in, la sortie du DFF et load.
+	// - Mux doit renvoyer in quand load = 1 donc on a forcément b=in et 
+	// sel=load
+	// - Seule l'entrée a peut donc recevoir la sortie du DFF. En appelant 
+	// celle-ci dffOut on obtient a=dffOut (en faisant donc abstraction du pb 
+	// d'initialisation décrit ci-dessus).
+	// - En appelant muxOut la sortie du Mux, on obtient finalement :
+	Mux(a=dffOut, b=in, sel=load, out=muxOut);
+	// - L'entrée du DFF est forcément la sortie du Mux donc muxOut.
+	// - La sortie du DFF a été appelée dffOut ci-dessus donc on obtient :
+    DFF(in=muxOut, out=dffOut);
+	// _ Reste à émettre le signal de sortie, out (sachant que x Or false = x) :
+    Or(a=dffOut, b=false, out=out);
+}

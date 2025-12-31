@@ -1,0 +1,69 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/RAM8.hdl
+
+/**
+ * Memory of 8 registers, each 16 bit-wide. Out holds the value
+ * stored at the memory location specified by address. If load==1, then 
+ * the in value is loaded into the memory location specified by address 
+ * (the loaded value will be emitted to out from the next time step onward).
+ */
+
+CHIP RAM8 {
+    IN in[16], load, address[3];
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+
+	// CHIP DMux8Way :
+	//     IN in, sel[3];
+	//     OUT a, b, c, d, e, f, g, h;
+
+	// Si address = 000, selr0 = true
+	// Si address = 001, selr1 = true
+	// ...
+	// Si address = 111, selr7 = true
+	DMux8Way(in=true, sel=address, a=selr0, b=selr1, c=selr2, d=selr3, e=selr4, f=selr5, g=selr6, h=selr7);
+
+	// Si load = 0, loadrn = false donc le registre rn sera lu
+	// Si load = 1, loadrn = selrn donc on chargera le registre rn et les 
+	// autres seront lus puisqu'on aura loadr* = false pour ceux-ci.
+	And(a=load, b=selr0, out=loadr0);
+	And(a=load, b=selr1, out=loadr1);
+	And(a=load, b=selr2, out=loadr2);
+	And(a=load, b=selr3, out=loadr3);
+	And(a=load, b=selr4, out=loadr4);
+	And(a=load, b=selr5, out=loadr5);
+	And(a=load, b=selr6, out=loadr6);
+	And(a=load, b=selr7, out=loadr7);
+
+
+
+	// 
+	//  8-way demultiplexor :
+	//  Si sel = 000 : a = in, b = 0,  c = 0, ..., h = 0 
+	//  Si sel = 001 : a = 0,  b = in, c = 0, ..., h = 0
+	//  (...) 
+	//  Si sel = 111 : a = 0,  b = 0,  c = 0, ..., h = in
+
+	// Tous ces registres sont lus sauf éventuellement un d'entre eux pour 
+	// lequel on a loadrn = true :
+	Register(in=in, load=loadr0, out=r0);
+	Register(in=in, load=loadr1, out=r1);
+	Register(in=in, load=loadr2, out=r2);
+	Register(in=in, load=loadr3, out=r3);
+	Register(in=in, load=loadr4, out=r4);
+	Register(in=in, load=loadr5, out=r5);
+	Register(in=in, load=loadr6, out=r6);
+	Register(in=in, load=loadr7, out=r7);
+
+
+
+
+
+	// En sortie on a le registre rn correspondant à address :
+	Mux8Way16(a=r0, b=r1, c=r2, d=r3, e=r4, f=r5, g=r6, h=r7, sel=address, out=out); 
+
+}

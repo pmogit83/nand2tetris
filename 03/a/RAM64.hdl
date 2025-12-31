@@ -1,0 +1,100 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/RAM64.hdl
+
+/**
+ * Memory of 64 registers, each 16 bit-wide. Out holds the value
+ * stored at the memory location specified by address. If load==1, then 
+ * the in value is loaded into the memory location specified by address 
+ * (the loaded value will be emitted to out from the next time step onward).
+ */
+
+CHIP RAM64 {
+    IN in[16], load, address[6];
+    OUT out[16];
+
+    PARTS:
+/* -------------------------------------------------------- Notes (cf. p. 52) :
+	address = Nº RAM (0..7) + Nº Registre => MSB + LSB
+	address = 37 = 100101 = xxxyyy : xxx = MSB = 100 = 4, yyy = LSB = 101 = 5
+	Comme xxx peut prendre 8 valeurs possibles (000, 001, ..., 111), on 
+	construit MSB0 = 000000, MSB1 = 001000, ..., MSB7 = 111000 comme suit :
+
+				Bin16				Not(Bin16)
+				----------------	----------------
+	MSB0 = 00 :	0000000000000000	1111111111111111
+	MSB1 = 08 :	0000000000001000	1111111111110111
+	MSB2 = 16 :	0000000000010000	1111111111101111
+	MSB3 = 24 :	0000000000011000	1111111111100111
+	MSB4 = 32 :	0000000000100000	1111111111011111
+	MSB5 = 40 :	0000000000101000	1111111111010111
+	MSB6 = 48 :	0000000000110000	1111111111001111
+	MSB7 = 56 :	0000000000111000	1111111111000111
+---------------------------------------------------------------------------- */
+
+	Not16(in=true,                                                                    out=MSB0);
+	Not16(in[0..2]=true, in[3]=false,    in[4..15]=true,                              out=MSB1);
+	Not16(in[0..3]=true, in[4]=false,    in[5..15]=true,                              out=MSB2);
+	Not16(in[0..2]=true, in[3..4]=false, in[5..15]=true,                              out=MSB3);
+	Not16(in[0..4]=true, in[5]=false,    in[6..15]=true,                              out=MSB4);
+	Not16(in[0..2]=true, in[3]=false,    in[4]=true,     in[5]=false, in[6..15]=true, out=MSB5);
+	Not16(in[0..3]=true, in[4..5]=false, in[6..15]=true,                              out=MSB6);
+	Not16(in[0..2]=true, in[3..5]=false, in[6..15]=true,                              out=MSB7);
+
+	// On crée selMSB bien qu'il soit égal à MSB7 pour la clarté du code : 
+	Or16(a=false, b=MSB7, out=selMSB);
+
+	// address16 = address sur 16 bits. 
+	// Exemple : address = 37 = 100101 => address16 = 0000000000100101
+	Or16(a[0..5]=address, a[6..15]=false, b=false, out=address16);
+	// On détermine les 3 bits de poids fort d'address16 : 
+	// Exemple : address16 = 0000000000100101
+	//              selMSB = 0000000000111000 =>
+	//               sel16 = 0000000000100000
+	And16(a=address16, b=selMSB, out=sel16);
+
+	// Gymnastique pour extraire 3 bits. On utilise le workaround décrit 
+	// dans l'annexe 2 p. 15.
+	// Exemple :    sel16 = 0000000000100000
+	//           notsel16 = 1111111111011111 
+	Not16(in=sel16, out=notsel16);
+
+	// À partir d'ici, on utilise la notation address = xxxyyy de la p. 52 :
+	// Exemple : xxx = Not(011) = 100 = 4
+	Not16(in=notsel16, out[3..5]=xxx);
+
+	// On détermine le registre dans la RAM à partir du LSB d'address.
+	// Si address = xxxyyy, LSB = yyy 
+	// Exemple : address16 = 0000000000100101 => yyy = 101 = 5
+	And16(a=address16, b=true, out[0..2]=yyy);
+
+	// À ce stade, on dispose de xxx et de yyy. On sait quelle RAM8 adresser 
+	// via xxx et on sait quel registre à l'intérieur de cette RAM8 adresser 
+	// via yyy. Exemple : sel = 4 donc selRAM4 = 1 et on sélectionne la RAM 4.
+	DMux8Way(in=true, sel=xxx, a=selRAM0, b=selRAM1, c=selRAM2, d=selRAM3, e=selRAM4, f=selRAM5, g=selRAM6, h=selRAM7);
+
+	// Si load = 0, loadRAMN = false donc la RAMN sera lue.
+	// Si load = 1, loadRAMN = selRAMN donc on écrira dans la RAMN et les 
+	// autres seront lues puisqu'on aura loadRAM* = false pour celles-ci.
+	And(a=load, b=selRAM0, out=loadRAM0);
+	And(a=load, b=selRAM1, out=loadRAM1);
+	And(a=load, b=selRAM2, out=loadRAM2);
+	And(a=load, b=selRAM3, out=loadRAM3);
+	And(a=load, b=selRAM4, out=loadRAM4);
+	And(a=load, b=selRAM5, out=loadRAM5);
+	And(a=load, b=selRAM6, out=loadRAM6);
+	And(a=load, b=selRAM7, out=loadRAM7);
+
+	RAM8(in=in, load=loadRAM0, address=yyy, out=outRAM0);
+	RAM8(in=in, load=loadRAM1, address=yyy, out=outRAM1);
+	RAM8(in=in, load=loadRAM2, address=yyy, out=outRAM2);
+	RAM8(in=in, load=loadRAM3, address=yyy, out=outRAM3);
+	RAM8(in=in, load=loadRAM4, address=yyy, out=outRAM4);
+	RAM8(in=in, load=loadRAM5, address=yyy, out=outRAM5);
+	RAM8(in=in, load=loadRAM6, address=yyy, out=outRAM6);
+	RAM8(in=in, load=loadRAM7, address=yyy, out=outRAM7);
+
+	// sel permet de sélectionner outRAMN comme valeur de sortie.
+	Mux8Way16(a=outRAM0, b=outRAM1, c=outRAM2, d=outRAM3, e=outRAM4, f=outRAM5, g=outRAM6, h=outRAM7, sel=xxx, out=out);
+}
