@@ -1,3 +1,7 @@
 bkp/
+a/*.cmp
+a/*.tst
+b/*.cmp
+b/*.tst
 init.bat
 readme.odt
