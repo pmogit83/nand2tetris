@@ -18,13 +18,13 @@ CHIP RAM16K {
     // Put your code here:
 /* -------------------------------------------------------- Notes (cf. p. 52) :
 	16K = 16384 = 4096 x 4 => 4 x RAM4K
-	address[14] = xxyyyyyyyyyyyy avec :
-	xx = Nº de RAM512 (0..3) et yyyyyyyyyyyy = adresse dans RAM4K
-	
+	address[14] = xxyyyyyyyyyyyy with :
+	xx = RAM512 Nº (0..3) and yyyyyyyyyyyy = address in RAM4K
+
 	address = 37 = 000100101 = xxyyyyyyyyyyyy : xx = MSB = 000 = 0, 
 	yyyyyyyyyyyy = LSB = 100101 = 37
-	Comme xx peut prendre 4 valeurs possibles (00, 01, 10, 11), on 
-	construit MSB0 = 00000000000000, MSB1 = 00010000000000, 
+	As xx can take 4 possible values (00, 01, 10, 11), we 
+	build     MSB0 = 00000000000000, MSB1 = 00010000000000, 
 			  MSB2 = 00100000000000, MSB3 = 00110000000000
 
 			Bin16				Not(Bin16)
@@ -41,44 +41,44 @@ CHIP RAM16K {
 	Not16(in[0..12]=true, in[13]=false,    in[14..15]=true,  out=MSB2);
 	Not16(in[0..11]=true, in[12..13]=false, in[14..15]=true, out=MSB3);
 
-	// On crée selMSB bien qu'il soit égal à MSB3 pour la lisibilité du code : 
+	// We create selMSB, although it's equal to MSB3, for code readability : 
 	Or16(a=false, b=MSB3, out=selMSB);
 
-	// address16 = address[14] sur 16 bits. 
-	// Exemple : address[14] = 37 =   00000000100101 => 
+	// address16 = 16 bits address[14]. 
+	// Example : address[14] = 37 =   00000000100101 => 
 	//                  address16 = 0000000000100101
 	Or16(a[0..13]=address, a[14..15]=false, b=false, out=address16);
-	// On détermine les 3 bits de poids fort d'address16 : 
-	// Exemple : address16 = 0000000000100101
+	// We compute the 3 most significant bits of address16 :
+	// Example : address16 = 0000000000100101
 	//              selMSB = 0011000000000000 =>
 	//               sel16 = 0000000000100000
 	And16(a=address16, b=selMSB, out=sel16);
 
-	// Gymnastique pour extraire 2 bits. On utilise le workaround décrit 
-	// dans l'annexe 2 p. 15.
-	// Exemple :    sel16 = 0000000000100000
+	// Gymnastic to extract 2 bits. We use the workaround described appendix 2  
+	// p. 15.
+	// Example :    sel16 = 0000000000100000
 	//           notsel16 = 1111111111011111 
 	Not16(in=sel16, out=notsel16);
 
-	// À partir d'ici, on utilise la notation address = xxyyyyyyyyyyyy
-	// Exemple : xx = Not(11) = 00 = 0
+	// From here, we use the notation address = xxyyyyyyyyyyyy
+	// Example : xx = Not(11) = 00 = 0
 	Not16(in=notsel16, out[12..13]=xx);
 
-	// On détermine le registre dans la RAM à partir du LSB d'address.
-	// Si address = xxyyyyyyyyyyyy, LSB = yyyyyyyyyyyy 
-	// Exemple : address16 = 0000000000100101 => 
+	// From here, we use the notation address = xxyyyyyyyyyyyy
+	// If address = xxyyyyyyyyyyyy, LSB = yyyyyyyyyyyy 
+	// Example : address16 = 0000000000100101 => 
 	//                           yyyyyyyyyyyy = 000000100101 = 37
 	And16(a=address16, b=true, out[0..11]=yyyyyyyyyyyy);
 
-	// À ce stade, on dispose de xx et de yyyyyyyyyyyy. On sait quelle RAM4K 
-	// adresser via xx et on sait quel registre à l'intérieur de cette RAM4K 
-	// adresser via yyyyyyyyyyyy. Exemple : sel = 3 donc selRAM3 = 1 et on 
-	// sélectionne la RAM 3.
+	// From here, we know xx and yyyyyyyyyyyy. We know which RAM4K to address 
+	// through xx and we know which register inside this RAM4K to address 
+	// through yyyyyyyyyyyy. Example : sel = 3 so selRAM3 = 1 and we select 
+	// RAM 3.
 	DMux4Way(in=true, sel=xx, a=selRAM0, b=selRAM1, c=selRAM2, d=selRAM3);
 
-	// Si load = 0, loadRAMN = false donc la RAMN sera lue.
-	// Si load = 1, loadRAMN = selRAMN donc on écrira dans la RAMN et les 
-	// autres seront lues puisqu'on aura loadRAM* = false pour celles-ci.
+	// If load = 0, loadRAMN = false so RAMN will be read.
+	// If load = 1, loadRAMN = selRAMN so we will write in RAMN and the other  
+	// ones will be read since we will have loadRAM* = false for those.
 	And(a=load, b=selRAM0, out=loadRAM0);
 	And(a=load, b=selRAM1, out=loadRAM1);
 	And(a=load, b=selRAM2, out=loadRAM2);
@@ -89,7 +89,6 @@ CHIP RAM16K {
 	RAM4K(in=in, load=loadRAM2, address=yyyyyyyyyyyy, out=outRAM2);
 	RAM4K(in=in, load=loadRAM3, address=yyyyyyyyyyyy, out=outRAM3);
 
-	// sel permet de sélectionner outRAMN comme valeur de sortie.
-	// Mux8Way16(a=outRAM0, b=outRAM1, c=outRAM2, d=outRAM3, e=outRAM4, f=outRAM5, g=outRAM6, h=outRAM7, sel=xxx, out=out);
+	// sel enables to select outRAMN as output value.
 	Mux4Way16(a=outRAM0, b=outRAM1, c=outRAM2, d=outRAM3, sel=xx, out=out);
 }

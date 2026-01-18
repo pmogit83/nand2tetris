@@ -17,20 +17,22 @@ CHIP Bit {
     // Put your code here:
 	// __ Sources : Ch. 3 p. 43, fig. 3.1 + Annexe 2 HDL, A2.4 § feedback loops
 	
-	// Ce code fonctionne bien que dffOut ne soit pas initialisé ! Ou alors 
-	// initialisé à 0 par défaut. Il est tiré directement du schéma p. 43 et 
-	// des remarques suivantes :
-	// - On a 3 entrées pour Mux : in, la sortie du DFF et load.
-	// - Mux doit renvoyer in quand load = 1 donc on a forcément b=in et 
+	// This code runs fine although 'dffOut' is not initialized ! The code is 
+	// directly based on the figure p. 43 and on the following remarks :
+	// - We have 3 inputs for Mux : 'in', the DFF output and 'load'.
+	// - Mux must emit 'in' when load = 1 so we necessarily have b=in and  
 	// sel=load
-	// - Seule l'entrée a peut donc recevoir la sortie du DFF. En appelant 
-	// celle-ci dffOut on obtient a=dffOut (en faisant donc abstraction du pb 
-	// d'initialisation décrit ci-dessus).
-	// - En appelant muxOut la sortie du Mux, on obtient finalement :
+	// - Only the 'a' pin can receive the DFF output. Calling this output 
+	// 'dffOut', we obtain a=dffOut (letting aside the initialization problem 
+	// described above).
+	// - If we call 'muxOut' the Mux output, we finaly get :
 	Mux(a=dffOut, b=in, sel=load, out=muxOut);
-	// - L'entrée du DFF est forcément la sortie du Mux donc muxOut.
-	// - La sortie du DFF a été appelée dffOut ci-dessus donc on obtient :
+
+	// - The DFF input is necessarily the Mux output, so 'muxOut'.
+	// - The DFF output has been called 'dffOut', so we get :
     DFF(in=muxOut, out=dffOut);
-	// _ Reste à émettre le signal de sortie, out (sachant que x Or false = x) :
+
+	// - We are left with emiting the output signal, 'out' (knowing that 
+	// x Or false = x) :
     Or(a=dffOut, b=false, out=out);
 }
