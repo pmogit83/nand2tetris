@@ -1,0 +1,226 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/Memory.hdl
+
+/**
+ * The complete address space of the Hack computer's memory,
+ * including RAM and memory-mapped I/O. 
+ * The chip facilitates read and write operations, as follows:
+ *     Read:  out(t) = Memory[address(t)](t)
+ *     Write: if load(t-1) then Memory[address(t-1)](t) = in(t-1)
+ * In words: the chip always outputs the value stored at the memory 
+ * location specified by address. If load==1, the in value is loaded 
+ * into the memory location specified by address. This value becomes 
+ * available through the out output from the next time step onward.
+ * Address space rules:
+ * Only the upper 16K+8K+1 words of the Memory chip are used. 
+ * Access to address>0x6000 is invalid. Access to any address in 
+ * the range 0x4000-0x5FFF results in accessing the screen memory 
+ * map. Access to address 0x6000 results in accessing the keyboard 
+ * memory map. The behavior in these addresses is described in the 
+ * Screen and Keyboard chip specifications given in the book.
+ */
+
+
+/* =============================== Overview ===================================
+
+---------------------- Memory card to compare with diagram 5.6 p. 17 / 29 :
+
+0x0000 ----
+0x1000    |		RAM16K : [0x0000 ; 0x3FFF] = [0 ; 16383]
+0x2000    |
+0x3000    |
+(...)     |
+0x3FFF ----
+0x4000 ----
+0x5000    | 	SCREEN = RAM8K : [0x4000 ; 0x5FFF] = [16384 ; 24575]
+(...)     |
+0x5FFF ----
+0x6000 ----		KEYBOARD = 1 mot de 16 bits : 0x6000 = 24576
+
+=> address space needed : [0 ; 24576] 
+
+------------------------------------------------ Extract from book p. 23 / 29 :
+5.3.2  Memory 
+
+The Hack Memory chip is essentially an amalgamation of 3 lower-level chips : 
+
+	RAM16K, 
+	Screen, and 
+	Keyboard. 
+
+Yet this modularity is strictly implicit : users of the Memory chip, like Hack 
+programmers or programmers who write compilers that generate Hack code, see a 
+single address space, spanning from address 0 to address 24576 (0×0000 to 
+0×6000 in hexa).
+ 
+The implementation of the Memory chip (as shown in diagram 5.6) should realize 
+this continuum effect. For example, if the address input of the Memory chip 
+happens to be 16384, the chip logic should end up accessing address 0 in the 
+Screen chip, and so on. This can be done using similar techniques to those used 
+in chapter 3 to integrate small RAM units into larger ones.
+
+------------------------------------------------ Extract from book p. 25 / 29 :
+Memory : Composed from three chips: RAM16K, Screen, and Keyboard. The Screen 
+and the Keyboard are available as built-in chips and there is no need to build 
+them. Although the RAM16K chip was built in project 3, we recommend using its 
+built-in version, as it provides a debugging-friendly GUI.
+
+---------------------------------------------------------------------- RAM16K :
+CHIP RAM16K {
+    IN in[16], load, address[14];
+    OUT out[16];
+	(...)
+}
+
+---------------------------- Built-in chips (nand2tetris\tools\builtInChips\) :
+
+CHIP Screen {
+    IN  in[16],    // what to write
+    load,          // write-enable bit
+    address[13];   // where to read/write
+    OUT out[16];   // Screen value at the given address
+    BUILTIN Screen;
+    CLOCKED in, load;
+}
+
+CHIP Keyboard {
+    OUT out[16];   // The ASCII code of the pressed key,
+                   // or 0 if no key is currently pressed,
+                   // or one the special codes listed in Figure 5.5.
+    BUILTIN Keyboard;
+}
+
+------------------------------------------------------------------- Adressing :
+
+address[15]    = ??????????????? 
+
+Hexa       Déc					Bin16		b14-b13		b14b13 (déc)	address And16 zoneMask 
+
+------	 -----   	----------------
+				bit 1111110000000000
+					5432109876543210
+
+__ RAM16K :
+0x0000 =     0 = 	0000000000000000        0 - 0		0				0
+(...)
+0x3FFF = 16383 = 	0011111111111111		0 - 1		1				8192
+
+__ Screen :
+0x4000 = 16384 = 	0100000000000000		1 - 0		2				16384
+(...)
+0x5FFF = 24575 = 	0101111111111111		1 - 0		2				16384
+
+__ Keyboard :
+0x6000 = 24576 = 	0110000000000000		1 - 1		3				24576
+
+If we name memzone b14b13 in decimal :
+	memzone = 0 ou 1 <=> RAM16K
+	memzone = 2 <=> Screen
+	memzone = 3 and address = testKB <=> address = testKB <=> Keyboard
+
+------------------------------------------------------------- Alternate view :
+
+
+	address[15] = bbbbbbbbbbbbbbb	=> [0 ; 32767]
+
+
+		 0	            16383        	 24575             32767
+		 -----------------+----------------++xxxxxxxxxxxxxxxx+
+			RAM16K			  Screen        ^   Out-of-range (address > 24576)
+			address[14]		  address[13]   |
+											|
+		                                 Keyboard = 24576
+
+RAM16K :   address[15] dans [000000000000000 ; 011111111111111] <=> b14 = 0
+
+Screen :   address[15] dans [100000000000000 ; 101111111111111] <=> b14 = 1 and b13 = 0
+
+Keyboard : address[15] dans [110000000000000 ; 110000000000000] <=> b14 = 1 and b13 = 1 and b12..b0 = false
+
+Out-of-range                                                    <=> b14 = 1 and b13 = 1 and b12..b0 Not false
+
+=============================== End of overview ============================ */
+
+CHIP Memory {
+    IN in[16], load, address[15];
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+
+	// Memory corresponds to an address space of 16K+8K+1 matching RAM16K, 
+	// Screen and Keyboard chips
+	// address[15] => 2^15 = 32768 > 24576 
+
+	// RAM16K address[14] 
+	// 	address[14] = xxyyyyyyyyyyyy avec :
+	// 	xx = Nº of RAM512 (0..3) et yyyyyyyyyyyy = adresse dans RAM4K
+
+	// zoneMask = 0011000000000000 = Not(1100111111111111)
+	Not16(in[0..12]=true, in[13..14]=false, in[15]=true, out=zoneMask);
+
+	// __ Convert address[15] to 16 bits address :
+	Or16(a[0..14]=address, a[15]=false, b=false, out=addr16);
+
+	// __ Compute masked address :
+	And16(a=addr16, b=zoneMask, out=maskedAddr);
+
+	// __ Compute b14-b13 :
+	Not16(in=maskedAddr, out=notMA);
+	Not16(in=notMA, out[13..14]=b14b13);
+	
+	// RAM16K   <=> b14b13 = 00 or 01 
+	// Screen   <=> b14b13 = 10
+	// Keyboard <=> b14b13 = 11 AND b12..b00 = 0 !
+	DMux4Way(in=true, sel=b14b13, a=selRAM1, b=selRAM2, c=selScreen, d=selKB0);
+
+	// __ Select RAM16K if selRAM1 or selRAM2 is true :
+	Or(a=selRAM1, b=selRAM2, out=selRAM16K);
+
+	// __ Here we test if 00..12 bits are 0.
+	// 110000000000000 => 0000000000000 = 00000 (address[8..12]) + 00000000 (address[0..7])
+	Or8Way(in=address[0..7], out=testb0b7Addr);
+	Or8Way(in[0..4]=address[8..12], in[5..7]=false, out=testb8b12Addr);
+	
+	// __ For selKeyboard to be true, we must have selKB0 = true and 
+	// testb0b7Addr = false and testb8b12Addr = false.
+	// So : selKeyboard = selKB0 And Not(testb0b7Addr) And Not(testb8b12Addr)
+	Not(in=testb0b7Addr, out=notb0b7);
+	Not(in=testb8b12Addr, out=notb8b12);
+	And(a=selKB0, b=notb0b7, out=selKB1);
+	And(a=selKB1, b=notb8b12, out=selKeyboard);
+
+	// __ Compute final address if selScreen is true => we truncate the input  
+	// address to the 13 first bits :
+	Mux16(a=false, b=addr16, sel=selScreen, out[0..12]=screenAddr);
+
+	// __ RAM16K output. NB : we update only if load = true !
+	And(a=selRAM16K, b=load, out=loadRAM16K);
+	RAM16K(in=in, load=loadRAM16K, address=address[0..13], out=ram16kOut);
+
+	// __ Screen output. NB : we update only if load = true !
+	And(a=selScreen, b=load, out=loadScreen);
+	Screen(in=in, load=loadScreen, address=screenAddr, out=screenOut);
+
+	// __ Keyboard addressing :
+	Keyboard(out=keybOut);
+
+	// __ Final output = RAM16K, Screen or Keyboard if input address 
+	// corresponds to one of those 3. 
+
+	// __ If RAM16K selected, we get its output :
+	Mux16(a=false, b=ram16kOut, sel=selRAM16K, out=memOut1);
+	// __ If Screen selected, we get its output (else it will be memOut1 which 
+	// contains RAM16K output or nothing) :
+	Mux16(a=memOut1, b=screenOut, sel=selScreen, out=memOut2);
+	// __ If Keyboard selected, we take its output (else it will be memOut2 
+	// which contains RAM16K output, Screen output or nothing) :
+	Mux16(a=memOut2, b=keybOut, sel=selKeyboard, out=memOut3);
+	// __ Final selector = selRAM16K Or selScreen Or selKeyboard :
+	Or(a=selRAM16K, b=selScreen, out=selMem0);
+	Or(a=selMem0, b=selKeyboard, out=selMem);
+	// __ We finally send memOut3 to the output or false depending on load :	
+	Mux16(a=false, b=memOut3, sel=selMem, out=out);
+}

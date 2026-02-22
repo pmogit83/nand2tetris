@@ -1,0 +1,306 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/CPU.hdl
+
+/**
+ * The Hack CPU (Central Processing unit), consisting of an ALU,
+ * two registers named A and D, and a program counter named PC.
+ * The CPU is designed to fetch and execute instructions written in 
+ * the Hack machine language. In particular, functions as follows:
+ * Executes the inputted instruction according to the Hack machine 
+ * language specification. The D and A in the language specification
+ * refer to CPU-resident registers, while M refers to the external
+ * memory location addressed by A, i.e. to Memory[A]. The inM input 
+ * holds the value of this location. If the current instruction needs 
+ * to write a value to M, the value is placed in outM, the address 
+ * of the target location is placed in the addressM output, and the 
+ * writeM control bit is asserted. (When writeM==0, any value may 
+ * appear in outM). The outM and writeM outputs are combinational: 
+ * they are affected instantaneously by the execution of the current 
+ * instruction. The addressM and pc outputs are clocked: although they 
+ * are affected by the execution of the current instruction, they commit 
+ * to their new values only in the next time step. If reset==1 then the 
+ * CPU jumps to address 0 (i.e. pc is set to 0 in next time step) rather 
+ * than to the address resulting from executing the current instruction. 
+ */
+
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+    // Put your code here:
+
+	/* --------------------------------------------- Extract 'chapter 05.pdf' :
+	Instruction decoding 
+	The 16-bit value of the CPU’s instruction input represents either an 
+	A-instruction or a C-instruction. In order to figure out the semantics of 
+	this instruction, we can parse, into the following fields : 
+	“ixxaccccccdddjjj”. 
+	The i-bit (also known as opcode) codes the instruction type, which is 
+	either 0 for an A-instruction or 1 for a C-instruction. In case of an 
+	A-instruction, the entire instruction represent the 16-bit value of the 
+	constant that should be loaded into the A register. In case of a 
+	C-instruction, the a- and c-bits code the comp part of the instruction, 
+	while the d- and j-bits code the dest and jump parts of the instruction, 
+	respectively (the x-bits are not used, and can be ignored).
+	------------------------------------------------------------ End Extract */
+
+	// __ instruction[16] segmentation :
+	//  
+	// 15   10   5    0
+	// +----+----+----+
+	// ixxaccccccdddjjj
+	Or16(a=instruction, b=false, out[15]=iField, out[13..14]=xxField, out[12]=aField, out[6..11]=cccccc, out[3..5]=ddd, out[0..2]=jjj);
+
+	// __ Bits extraction constants :
+	// __ 0000000000100000 :
+	Not16(in[0..4]=true, in[5]=false, in[6..15]=true, out=thirtytwo16);
+	// __ 0000000000010000 :
+	Not16(in[0..3]=true, in[4]=false, in[5..15]=true, out=sixteen16);
+	// __ 0000000000001000 :
+	Not16(in[0..2]=true, in[3]=false, in[4..15]=true, out=eight16);
+	// __ 0000000000000100 :
+	Not16(in[0..1]=true, in[2]=false, in[3..15]=true, out=four16);
+	// __ 0000000000000010 :
+	Not16(in[0]=true, in[1]=false, in[2..15]=true, out=two16);
+	// __ 0000000000000101 :
+	Not16(in[0]=false, in[1..15]=true, out=one16);
+
+	// As sub-bussing is not permitted (Appendix 2 p. 14), we must slice again 
+	// the fields produced by the previous 'Or16'. We slice the fields 
+	// following the documentation (for exeaple, ddd is cut into d1, d2 et d3). 
+
+	// Source : ch. 4 p. 66 =>
+	// 15         10             5              0
+	// +----------+--------------+--------------+
+	// i x x a c  c  c  c  c  c  d  d  d  j  j  j
+	// 
+	// i x x a c1 c2 c3 c4 c5 c6 d1 d2 d3 j1 j2 j3
+
+
+	// ---------------------------------------------------- ddd => d1, d2, d3 :
+	// __ Example : a = 0000000000000ddd And four16 => d1
+	And16(a[3..15]=false, a[0..2]=ddd, b=four16, out[2]=d1);
+	And16(a[3..15]=false, a[0..2]=ddd, b=two16, out[1]=d2);
+	And16(a[3..15]=false, a[0..2]=ddd, b=one16, out[0]=d3);
+
+	// ------------------------------------- cccccc => c1, c2, c3, c4, c5, c6 :
+	// __ Example : a = 0000000000cccccc And sixteen16 => c2
+	And16(a[6..15]=false, a[0..5]=cccccc, b=thirtytwo16, out[5]=c1);
+	And16(a[6..15]=false, a[0..5]=cccccc, b=sixteen16, out[4]=c2);
+	And16(a[6..15]=false, a[0..5]=cccccc, b=eight16, out[3]=c3);
+	And16(a[6..15]=false, a[0..5]=cccccc, b=four16, out[2]=c4);
+	And16(a[6..15]=false, a[0..5]=cccccc, b=two16, out[1]=c5);
+	And16(a[6..15]=false, a[0..5]=cccccc, b=one16, out[0]=c6);
+
+	// __ Global example :
+	// ixxaccccccdddjjj
+	// 0000011100101011 = 1835
+	// 
+	// => iField=0, xxField=00=0, aField=0, c1=0, c2=1, c3=1, c4=1, c5=0, c6=0, 
+	//    d1=1, d2=0, d3=1, j1=0, j2=1, j3=1
+
+	// ------------------------------------- jjj => j1, j2, j3 :
+	// __ Example : a = 0000000000jjj And two16 => j1
+	And16(a[3..15]=false, a[0..2]=jjj, b=four16, out[2]=j1);
+	And16(a[3..15]=false, a[0..2]=jjj, b=two16, out[1]=j2);
+	And16(a[3..15]=false, a[0..2]=jjj, b=one16, out[0]=j3);
+
+	// __ Description : first Mux16 in the top left of diagram 5.8 p. 20. 
+	// __ Sources : 
+	// . diag 5.8 p. 20
+	// . slides 40, 41 (iField=opcode=0 => A receives the instruction).
+	// __ Objective :
+	// If iField=0, outMux1=instruction ; else, outMux1=outALU
+	// NB : outALU = ALU output (see below).
+	Mux16(a=instruction, b=outALU, sel=iField, out=outMux1);
+
+	/* ----------------------------------------------- Register specification :
+	CHIP Register {
+	    IN in[16], load;
+	    OUT out[16];	
+
+	NB : we use ARegister and DRegister following recsur recommendation p. 25.
+	------------------------------------------------------------------------ */
+	// __ Description : A register diagram 5.8 p. 20. 
+	// __ Sources :
+	// . ch. 4 p. 67 : "The first and second d-bits code whether to store the 
+	// computed value in the A register and in the D register, respectively. 
+	// The third d-bit codes whether to store the computed value in M".
+	// . ch. 4 p. 68 : figure 4.4 shows clearly that is A is loaded when  
+	// d1=1 :
+	// 
+	// d1 d2 d3		Mnemonic	Destination (where to store the computed value)
+	// -- -- --		--------	-----------------------------------------------
+	// 0  0  0 		null 		The value is not stored anywhere
+	// 0  0  1 		M 			Memory[A] (memory register addressed by A)
+	// 0  1  0 		D 			D register
+	// 0  1  1 		MD 			Memory[A] and D register
+	// 1  0  0 		A 			A register
+	// 1  0  1 		AM 			A register and Memory[ A]
+	// 1  1  0 		AD 			A register and D register
+	// 1  1  1 		AMD 		A register, Memory[A], and Dregister
+	//
+	// . p. 21 : "The three d-bits are used to determine which registers should 
+	// “accept” the ALU resulting output, (...)"
+	// . slides 46 and 47 
+	// __ Objective :
+	// outAReg=addressM=outMux1 ; if d1=1, A is loaded with first Mux16 output 
+	// so with outMux1
+
+	Not(in=iField, out=not-iField);
+	And(a=iField, b=d1, out=d1AndiField);
+	Or(a=not-iField, b=d1AndiField, out=loadAReg);
+	ARegister(in=outMux1, load=loadAReg, out=outAReg, out[0..14]=addressM);
+
+	// __ addressM is updated after writeM initialization below.
+	// __ NB : if d1 is false, A output is not fed and addressM neither.
+	// __ Description : D register diagram 5.8 p. 20. 
+	// __ Sources : we see figure 4.4 that D is loaded when d2=1.
+	// . Slide 47 confirmation  : for ddd = 010 we see that D load bit is 1.
+	// __ Only load D for a 'C' instruction when d2=1 :
+	And(a=iField, b=d2, out=d2AndiField);
+	DRegister(in=outALU, load=d2AndiField, out=outDReg);
+
+	// __ Description : second Mux16 in the middle of the diagram 5.8 p. 20. 
+	// __ Sources : 
+	// . slide 45 : select bit is the 'a' bit of the instruction, so aField in 
+	// the code. Furthermore, when aField=0, the cccccc bits are routed to the 
+	// ALU. 
+	// . diag 5.8 p. 20 + p. 21 : "In the case of a C-instruction, the single 
+	// a-bit determines whether the ALU will operate on the A register input or 
+	// on the M input."
+	// . Table 4.3 ch. 4 p. 67 : M appears in the right column only when a = 1.  
+	// __ Objective :
+	// If aField=0, outMux2=outAReg ; else, outMux2=inM
+	Mux16(a=outAReg, b=inM, sel=aField, out=outMux2);
+
+	/* ---------------------------------------------------- ALU specification  :	
+	CHIP ALU {
+	        IN
+	                x[16], y[16],  // 16-bit inputs
+	                zx, // zero the x input?
+	                nx, // negate the x input?
+	                zy, // zero the y input?
+	                ny, // negate the y input?
+	                f,  // compute out = x + y (if 1) or x & y (if 0)
+	                no; // negate the out output?
+	
+	        OUT
+	                out[16], // 16-bit output
+	                zr, // 1 if (out == 0), 0 otherwise
+	                ng; // 1 if (out < 0),  0 otherwise
+	------------------------------------------------------------------------ */
+
+	// __ Description : ALU diagram 5.8 p. 20. 
+	// __ Sources :
+	// . ch. 2 p. 36 
+	// . diag 5.8 p. 20 : x and y are D output and that of the second Mux16.
+	// . slide 45 : the 6 bits cccccc obviously correspond to the zx, nx, zy, 
+	// ny, f and no flags.
+	ALU(x=outDReg, y=outMux2, zx=c1, nx=c2, zy=c3, ny=c4, f=c5, no=c6, out=outM, out=outALU, zr=zr, ng=ng);
+
+	// __ Set PC to 0 :
+	Not16(in=true, out[0..14]=zero15);
+
+	// __ Jump decision. 
+	// Sources : 
+	// . p. 13 and especially p. 22
+	// . slide 49 => zr (zero) and ng (negative) flags in ALU output permit to 
+	// compute the jump condition.   
+	// 
+	// 			j1	j2	j3		zr  ng								
+	// null 	0 	0 	0 		*	*		no jump						
+	// JGT 		0 	0 	1 		0	0		if (ALU out > 0) jump		
+	// JEQ 		0 	1 	0 		1	0		if (ALU out = 0) jump
+	// JGE 		0 	1 	1 		*	0		if (ALU out >= 0) jump
+	// JLT 		1 	0 	0 		0	1		if (ALU out < 0) jump
+	// JNE 		1 	0 	1 		0	*		if (ALU out <> 0) jump
+	// JLE 		1 	1 	0 		Xor=1 		if (ALU out <= 0) jump
+	// JMP 		1 	1 	1 		*	*		Unconditional jump			
+
+	DMux8Way(in=true, sel=jjj, a=NOJMP, b=JGT, c=JEQ, d=JGE, e=JLT, f=JNE, g=JLE, h=JMP);
+
+	Not(in=zr, out=notzr);
+	Not(in=ng, out=notng);
+
+	// __ JGT ?
+	And(a=JGT, b=notzr, out=and1);
+	And(a=and1, b=notng, out=e1);
+	// __ JEQ ?
+	And(a=JEQ, b=zr, out=and2);
+	And(a=and2, b=notng, out=e2);
+	// __ JGE ?
+	And(a=JGE, b=notng, out=e3);
+	// __ JLT ?
+ 	And(a=JLT, b=notzr, out=and3);
+ 	And(a=and3, b=ng, out=e4);
+	// __ JNE ?
+	And(a=JNE, b=notzr, out=e5);
+	// __ JLE ?
+	Xor(a=zr, b=ng, out=zrXorng);
+	And(a=JLE, b=zrXorng, out=e6);
+
+	// __ Jump ?
+	Or(a=e1, b=e2, out=or1);
+	Or(a=or1, b=e3, out=or2);
+	Or(a=or2, b=e4, out=or3);
+	Or(a=or3, b=e5, out=or4);
+	Or(a=or4, b=e6, out=or5);
+	Or(a=or5, b=JMP, out=or6);
+	// __ NB : jump is only doable for a 'C' instruction !
+	And(a=or6, b=iField, out=jump);
+
+	/* ---------------------------------------------------- PC specification  :
+	Sources : 
+	- chapitre 03 p. 51
+	- p. 22 : 
+		. reset input directly connected to the PC chip to cause PC = 0
+		. "(...) the output of the A register feeds into the input of the PC 
+		register. Recall that the latter chip has a load-bit that enables it to 
+		accept a new input value. Thus, if we’ll assert this load-bit, we’ll 
+		cause the architecture to effect the operation PC=A rather than the 
+		default operation PC++."
+ 
+	CHIP PC {
+	    IN in[16], load, reset, inc;
+	    OUT out[16];
+	------------------------------------------------------------------------ */
+	Not(in=jump, out=noJump);
+	PC(in=outAReg, load=jump, reset=reset, inc=noJump, out[0..14]=pc);
+
+	/* ---------------------------------------------------- writeM + addressM :
+	Sources : 
+	- p. 13 : "The addressM output holds the memory address to which outM 
+	should be written."
+	- "If instruction is a C-instruction, then (i) the CPU causes the ALU to 
+	perform the computation specified by the instruction, and (ii) the CPU 
+	causes this value to be stored in the subset of {A,D,M} registers 
+	specified by the instruction. If one of these registers is M, the CPU 
+	asserts the writeM control bit output (when writeM	is	0, any value may 
+	appear in outM)." 
+	- Header : "(...) If the current instruction needs to write a value to M, 
+	the value is placed in outM, the address of the target location is placed 
+	in the addressM output, and the writeM control bit is asserted. (When 
+	writeM==0, any value may appear in outM)."
+
+	    writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+	
+	-------------------------------------------------------------------------*/
+	
+	// __ Objective : if instruction 'C' and d3, writeM = 1 :
+	And(a=iField, b=d3, out=writeM);
+
+}
