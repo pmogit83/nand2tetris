@@ -1,0 +1,466 @@
+// ============================================================================
+// 
+// ----------------------------------------------- Rules (source : wikipedia) :
+// The aim of this challenge is to obtain a number (from 101 to 999) using 
+// basic arithmetic operations (addition '+', subtraction '-', multiplication 
+// '*', division '/') on natural numbers, starting with randomly drawn numbers 
+// (from 1 to 10, 25, 50, 75, and 100). Before the show was computerized, the 
+// game consisted of twenty-four tiles: the numbers 1 to 10 were present twice, 
+// and the numbers 25, 50, 75, and 100 were present only once. Six values ??were 
+// then drawn.
+// ============================================================================
+
+// __ Main class.
+class Main {
+	static int nOpZoneRow, nMaxRow, nMaxCol, nTilesRow, nMsgRow, nCurMsgRow;
+	static String strEmptyRow, strDashRow;
+	static Array aStrings;
+	static int nStrCount;
+
+	// __ Clears messages area :
+	function void clearMsgZone() {
+		var int nRow;
+		let nRow = nMsgRow;
+		while (nRow < (nMaxRow + 1)) {
+			do Main.clearLine(nRow);
+			let nRow = nRow + 1;
+		}						
+		return;
+	}
+
+	// __ Displays a message :
+	function void showMsg(String s) {
+		let nCurMsgRow = nCurMsgRow + 1;
+		if (nCurMsgRow > nMaxRow) {
+			do Main.clearMsgZone();
+			let nCurMsgRow = nMsgRow;
+		}
+		do Output.moveCursor(nCurMsgRow, 0);
+		do Output.printString(s);
+		return;
+	}
+
+	// __ Congratulations if "le compte est bon" (= the target number has been 
+	// reached)
+	function void congratulations() {
+		do Main.clearMsgZone();
+		let nCurMsgRow = nMsgRow + 1;
+		do Main.showMsg(aStrings[0]);
+		do Sys.wait(1500);
+		do Main.clearMsgZone();
+		let nCurMsgRow = nMsgRow;
+		return;
+	}
+
+	// __ Displays a string and goes to next line :
+	function void echo(String s) {
+		do Output.printString(s);
+		if (s.length() < nMaxCol) {
+			do Output.println();
+		}
+		return;
+	}
+
+	// __ Clears the screen and displays the title :
+	function void resetScreen() {
+		do Screen.clearScreen();
+		do Output.moveCursor(0, 0);
+		do Output.printString(aStrings[1]);
+		return;
+	}
+
+	// __ Screen 1 : resets the screen and asks to hit ENTER :
+	function void welcomeScreen() {
+		do Main.resetScreen();
+		do Output.moveCursor(11, 0);
+		do Output.printString(aStrings[2]);
+		return;
+	}
+
+	// __ Screen 2 : displays the main screen :
+	function void mainScreen(int count, Array aP, int nScore, int nGames, int nTarget, int nResult) {
+		var int i;
+		do Output.moveCursor(2, 0);
+		do Main.echo(aStrings[3]);
+		do Main.echo(aStrings[4]);
+		do Main.echo(aStrings[5]);
+		do Main.echo(strDashRow);
+		do Output.printString(aStrings[6]);
+		do Output.printInt(nScore);
+		do Output.printString(aStrings[7]);
+		do Output.printInt(nGames);
+		do Output.println();
+		do Main.echo(strDashRow);
+		do Main.clearLine(8);
+		do Output.moveCursor(8, 0);
+		do Output.printString(aStrings[8]);
+		do Output.printInt(nTarget);
+		do Output.printString(aStrings[9]);
+		if (nResult > 0) {
+			do Output.printInt(nResult);
+		}
+		else {
+			do Output.printString(aStrings[10]);
+		}
+		do Output.printString(aStrings[11]);
+		let i = 0;
+		while (i < count) {
+			if (aP[i] > 0) {
+				do Output.printInt(aP[i]);
+				do Output.printString(aStrings[12]);
+			}
+			let i = i + 1;
+		}
+		do Output.printString(aStrings[13]);
+		do Output.println();
+		do Main.echo(strDashRow);
+		do Output.moveCursor((nMsgRow - 1), 0);
+		do Output.printString(aStrings[14]);
+
+		return;
+	}
+
+	// __ Clears line nLine :
+	function void clearLine(int nLine) {
+		do Output.moveCursor(nLine, 0);
+		do Output.printString(strEmptyRow);
+		return;
+	} 
+
+	// __ Clears the operations area :
+	function void clearOpZone() {
+		var int nRow;
+		let nRow = nOpZoneRow;
+		while (nRow < (nMsgRow - 2)) {
+			do Main.clearLine(nRow);
+			let nRow = nRow + 1;
+		}
+		return;
+	}
+	
+	// __ Tests if 2 strings are identical :
+	function boolean strEq(String s1, String s2) {
+		var int nChar;
+		if (~ (s1.length() = s2.length()) ) {
+			return false;
+		}
+		let nChar = 0;
+		while (nChar < s1.length()) {
+			if (~ (s1.charAt(nChar) = s2.charAt(nChar))) {
+				return false;
+			}
+			let nChar = nChar + 1;
+		}
+		return true;
+	}
+
+	// __ Returns the index of a tile in the aP table or -1 if not found :
+	function int getPIndex(int nValue, int count, Array aP, int nSkip) {
+		var int i;
+		let i = 0;
+		while (i < count) {
+			if (~ (i = nSkip)) {
+				if (aP[i] = nValue) {
+					return i;
+				}
+			}
+			let i = i + 1;
+		}
+		return -1;		
+	}
+
+	// __ Tests if a string represents a non-negative integer :
+	function boolean isInt(String s1) {
+		var int nChar;
+		var char c;
+		
+		let nChar = 0;
+		while (nChar < s1.length()) {
+			let c = s1.charAt(nChar);
+			if ((c < 48) | (c > 57)) {
+				return false;
+			}
+			let nChar = nChar + 1;
+		}
+		return true;
+	}
+
+	// Creates the constant strings of the class :
+	function void createStrings() {
+		let nStrCount = 23;
+
+		let aStrings = Array.new(nStrCount);
+
+		let aStrings[0] = "   * * *       Success     : B R A V O ! ! ! * * *";
+		let aStrings[1] = "===================== LE COMPTE EST BON ! ======================";
+		let aStrings[2] = "                    Hit [ENTER] to begin !";
+		let aStrings[3] = "Operations syntax      : P1 OP P2 = RES";
+		let aStrings[4] = "P1, P2 : tiles ; RES : result ; OP : + - * /";
+		let aStrings[5] = "Example : 3 * 25 = 75";
+		let aStrings[6] = "              Total score : ";
+		let aStrings[7] = " / Games  : ";
+		let aStrings[8] = "  Draw : [";
+		let aStrings[9] = "] / Result [";
+		let aStrings[10] = "___";
+		let aStrings[11] = "] / Tiles   [";
+		let aStrings[12] = " ";
+		let aStrings[13] = "]";
+		let aStrings[14] = "--------------------------- Messages --------------------------";
+		let aStrings[15] = "Result reached ('Q' to quit) ? ";
+		let aStrings[16] = "Q";
+		let aStrings[17] = "Operation ('Q' to quit) ? ";
+		let aStrings[18] = "!!! First tile not found !";
+		let aStrings[19] = "!!! Second tile not found !";
+		let aStrings[20] = "*** End of the round...";
+		let aStrings[21] = "!!! Invalid operation !";
+		let aStrings[22] = "--- Unreached target : reduced score !";
+
+		return;
+	}
+
+	// Frees constant strings memory : 
+	function void freeStrings() {
+		var int i;
+		var String s;
+
+		let i = 0;
+		while (i < nStrCount) {
+			let s = aStrings[i];
+			do s.dispose();
+			let i = i + 1;
+		}
+		do aStrings.dispose();
+		return;
+	}
+
+	function void main() {
+		// __ The set of usable numbers : 
+		//	. 2 times 1, 2, ..., 10
+		//	. One time only 25, 50, 75 et 100 		
+		var Array aNombres, aTiles; 
+		var int i, nombre, length, inpSeed, target, nCount, nTiles, nRC;
+		var int nP1, nP2, nPlayerResult, nScore, nOpCount, nGames, nTotalScore;
+		var int nPenalty, nCurInpLine, prevTarget;
+		var boolean enterPressed, bQuit, bCurrentGame;
+		var String strInput;
+		var Random objRnd;
+		var EP objParser;
+
+		do Main.createStrings();
+
+		let length = 24;
+		let nTiles = 6;
+		let nScore = 0;
+		let nTotalScore = 0;
+		let nGames = 0;
+		let aNombres = Array.new(length); // constructs the array
+		let nOpZoneRow = 11;
+		let nTilesRow = 10;
+		let nMaxRow = 22;
+		let nMaxCol = 63;
+		let nMsgRow = 18;
+		// __ Penalty if announced score not reached :
+		let nPenalty = 50;
+		// __ Operations zone lines clearing :
+		let strEmptyRow = String.new(nMaxCol);
+		let i = 0;
+		while (i < nMaxCol) {
+			do strEmptyRow.appendChar(32);
+			let i = i + 1;
+		}
+		// __ Separation line :
+		let strDashRow = String.new(nMaxCol);
+		let i = 0;
+		while (i < nMaxCol) {
+			do strDashRow.appendChar(45);
+			let i = i + 1;
+		}
+
+		// Asks the player to hit ENTER so that the seed of the pseudo-random  
+		// number generator gets initialized.
+		do Main.welcomeScreen();
+		let enterPressed = false;
+		let inpSeed = 1;
+		while (~ enterPressed) {
+			if (Keyboard.keyPressed() = 128) {
+				let enterPressed = true;
+			}
+			let inpSeed = inpSeed + 1;
+			if (inpSeed > 58) {
+				let inpSeed = 1;
+			}
+		}
+
+		// Initializes the seed :
+		let objRnd = Random.new(inpSeed);
+		let aTiles = Array.new(nTiles); // constructs the array
+		let prevTarget = -1;
+		let bQuit = false;
+		while (~ bQuit) {
+
+			// __ Chooses the number to reach :
+			let target = objRnd.Rnd(101, 999);
+			// __ Prevents the same draw to come gain :
+			while (target = prevTarget) {
+				do objRnd.dispose();
+				let inpSeed = inpSeed + 1;
+				if (inpSeed > 58) {
+					let inpSeed = 1;
+				}
+				let objRnd = Random.new(inpSeed);
+				let target = objRnd.Rnd(101, 999);			
+			}
+			let prevTarget = target;
+			
+			// __ Builds the 24 tiles set :
+			let i = 0;
+			let nombre = 1;
+			while (i < 20) {
+				let aNombres[i] = nombre;
+				let i = i + 1;
+				let aNombres[i] = nombre;
+				let i = i + 1;
+				let nombre = nombre + 1;
+			}
+			let nombre = 25;
+			while (i < length) {
+				let aNombres[i] = nombre;
+				let i = i + 1;
+				let nombre = nombre + 25;
+			}
+			// __ Choose nTiles tiles between the 24 available :
+			let nCount = 0;
+			while (nCount < nTiles) {
+				let i = objRnd.Rnd(0, 23);
+				if (~ (aNombres[i] = 0)) {
+					let aTiles[nCount] = aNombres[i];
+					let aNombres[i] = 0;
+					let nCount = nCount + 1;
+				}
+			}
+
+			let bCurrentGame = true;
+			let nPlayerResult = 0;
+
+			// One can see in 12\KeyboardTest\Main.jack that the s string is  
+			// fed by Keyboard.readLine() but no allocation of the following  
+			// kind can be found : let s = String.new() ! 
+
+			do Main.resetScreen();
+			do Main.mainScreen(nTiles, aTiles, nTotalScore, nGames, target, nPlayerResult);
+
+			// __ Next message line number :
+			let nCurMsgRow = nMsgRow;
+
+			while (nPlayerResult = 0 & (~ bQuit) ) {
+				do Main.clearLine(nCurMsgRow);
+				do Output.moveCursor(nCurMsgRow, 0);
+				let strInput = Keyboard.readLine(aStrings[15]);
+
+				if (Main.strEq(strInput, aStrings[16])) {
+					let bQuit = true;
+					let bCurrentGame = false;
+				}
+				else {
+					if (Main.isInt(strInput)) {
+						let nPlayerResult = strInput.intValue();
+					}
+				}
+				do strInput.dispose();
+			}
+
+			do Main.mainScreen(nTiles, aTiles, nTotalScore, nGames, target, nPlayerResult);
+
+			// __ Makes sure operations zone is empty :			
+			do Main.clearOpZone();
+
+			let nOpCount = 0;
+			while (bCurrentGame) {
+				let nCurInpLine = (nOpZoneRow + nOpCount) - 1;
+				do Main.clearLine(nCurInpLine);
+				do Output.moveCursor(nCurInpLine, 0);
+				let strInput = Keyboard.readLine(aStrings[17]);
+				if (Main.strEq(strInput, aStrings[16])) {
+					let bQuit = true;
+					let bCurrentGame = false;
+				}
+				else {
+					if (~ (strInput.length() = 0)) {
+						// Constructs an analyzer :
+						let objParser = EP.new(strInput);
+						if (objParser.isValid()) {
+							// __ Tiles verification :
+							let nP1 = Main.getPIndex(objParser.getOp1(), nTiles, aTiles, -1);
+							if (nP1 < 0) {
+								do Main.showMsg(aStrings[18]);
+								do Sys.wait(1000);
+							}
+							else {
+								let nP2 = Main.getPIndex(objParser.getOp2(), nTiles, aTiles, nP1);
+								if (nP2 < 0) {
+									do Main.showMsg(aStrings[19]);
+									do Sys.wait(1000);
+								}
+								else {
+									// __ Tiles update : 2 tiles used during  
+									// operation ; the first one gets replaced  
+									// by the result of the operation and the  
+									// second one by 0 to invalidate it :
+									let aTiles[nP1] = objParser.getRes();
+									let aTiles[nP2] = 0;
+									let nOpCount = nOpCount + 1;	
+									do Main.mainScreen(nTiles, aTiles, nTotalScore, nGames, target, nPlayerResult);
+	
+									// __ Announced score reached ?
+									if (objParser.getRes() = nPlayerResult) {
+										let nScore = Math.abs(nPlayerResult - target);
+										let nTotalScore = nTotalScore + nScore;
+										let nGames = nGames + 1;
+										if (nScore = 0) {
+											do Main.congratulations();
+										}
+										else {
+											do Main.showMsg(aStrings[20]);
+	 										do Sys.wait(1500);
+	 									}
+										let bCurrentGame = false;
+									} 
+								}
+							}						
+						}
+						else {
+							do Main.showMsg(aStrings[21]);
+							do Sys.wait(1000);
+						}
+						do objParser.dispose();
+					}	// __ end if (~ (strInput.length() = 0))
+				}	// __ end else
+
+				do strInput.dispose();
+
+				// __ We use a counter to know when to clear operations zone :
+				if ((nOpCount > (nTiles - 2)) & bCurrentGame) {
+					do Main.showMsg(aStrings[22]);
+					let nScore = Math.abs(nPlayerResult - target);
+					let nScore = nScore + nPenalty;
+					let nTotalScore = nTotalScore + nScore;
+					let nGames = nGames + 1;
+					do Sys.wait(3000);
+					let bCurrentGame = false;
+				}
+
+			}	// __ end while (bCurrentGame) 
+
+		}	// end while (~ bQuit)
+
+		do aTiles.dispose();
+		do objRnd.dispose();
+		do aNombres.dispose();
+		do strEmptyRow.dispose();
+		do strDashRow.dispose();
+
+        do Main.freeStrings();
+
+		return;
+	}
+}

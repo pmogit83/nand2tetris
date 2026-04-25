@@ -1,0 +1,343 @@
+// ============================================================================
+// Expression Parser : we pass a string of the "2 x 3 = 6" kind to the 
+// constructor and we obtain an object with the following fields :
+//	int nOp1 = 2
+//	char op = 'x'
+// 	int nOp2 = 3
+//	int nRes = 6
+//	int nStatus = 0
+// 
+// -------------------------------------------------------------- Statuts :
+//	See getError() below.
+// 
+// ============================================================================
+
+/** ... */
+class EP {
+	field int nOp1;
+	field char op;
+	field int nOp2;
+	field int nRes;
+	field int nStatus;
+
+	static Array aEPStrings;
+	static int nEPStrCount;
+
+	// __ If the expression syntax is valid, we check that the result is 
+	// correct. Returns 0 (result ok), 2 (result not ok) or 3 (division by 0). 
+	function int checkResult(int n1, char operator, int n2, int nResult) {
+		var int nCalc;
+		var int nRC;
+		
+		let nRC = 2;
+		
+		let nCalc = n1;
+		if (operator = 42) {
+			let nCalc = nCalc * n2;
+		}
+		else {
+			if (operator = 43) {
+				let nCalc = nCalc + n2;
+			}
+			else {
+				if (operator = 45) {
+					let nCalc = nCalc - n2;
+				}
+				else {
+					if (n2 = 0) {
+						return 3;
+					}
+					else {
+						let nCalc = nCalc / n2;
+					}
+				}
+			}
+		}
+
+		if (nCalc = nResult) {
+			let nRC = 0;
+		}
+
+		return nRC;
+	}
+
+	// __ Returns the position of the next char not being a space :
+	function int skipWhites(String s, int nStart) {
+		while (s.charAt(nStart) = 32) {
+			let nStart = nStart + 1;
+			if (nStart = s.length()) {
+				return nStart;
+			}
+		}
+		return nStart;
+	}
+
+	// __ Identifies a positive integer in the s string from position nPos. 
+	// Sets nOp1, nOp2 or nRes depending on nIntPos and the object status.
+	method int parseInt(String s, int nPos, int nIntPos) {
+		var int nCharMax, nError;
+		var char curChar;
+		var String strTmp;
+
+    	let nCharMax = s.length();
+		let curChar = s.charAt(nPos);
+    	let strTmp = String.new(nCharMax);
+
+  		while ((curChar > 47) & (curChar < 58) & (nPos < nCharMax)) {
+  			let strTmp = strTmp.appendChar(curChar);
+  			let nPos = nPos + 1;
+  			if (nPos < nCharMax) {
+  				let curChar = s.charAt(nPos);
+  			}
+  		}
+
+  		if (strTmp.length() = 0) {
+			// 14 (for nOp1), 15 (for nOp2) or 16 (for nRes) :
+			do setStatus(13 + nIntPos);
+			do strTmp.dispose();
+			return nPos;
+  		}
+
+		if (nIntPos = 1) {
+			do setOp1(strTmp.intValue());
+		}
+		else {
+			if (nIntPos = 2) {
+				do setOp2(strTmp.intValue());
+			}
+			else {
+				do setResult(strTmp.intValue());
+			}
+		}
+
+		do strTmp.dispose();
+
+		return nPos;
+	}
+
+    /* We build an EP object from an expression */
+	constructor EP new(String strInput) {
+		var int nChar, nCharMax;
+		var char curChar;
+
+		// Constant strings declaration :
+		do EP.createStrings();
+
+		// Default values :
+    	do setStatus(0);
+    	let nOp1 = -1;
+    	// 63 = '?' :
+    	let op = 63;
+    	let nOp2 = -1;
+    	let nRes = -1;
+
+    	let nCharMax = strInput.length();
+    	if (nCharMax = 0) {
+    		return this;
+    	}
+
+    	let nChar = 0;
+  		let curChar = strInput.charAt(nChar);
+
+		// Skip spaces :
+		let nChar = EP.skipWhites(strInput, nChar);
+		if (nChar = nCharMax) {
+			do setStatus(1);
+			return this;
+		}
+
+  		// ------------------------------------------------------------- nOp1 :
+		let nChar = parseInt(strInput, nChar, 1);
+		if (~ isValid()) {
+			return this;
+		} 
+
+		let nChar = EP.skipWhites(strInput, nChar);
+		if (nChar = nCharMax) {
+			do setStatus(4);
+			return this;
+		}
+
+  		// ---------------------------------------- op = '+', '-', '*' or '/' :
+  		// 43, 45, 42 ou 47
+		let curChar = strInput.charAt(nChar);
+  		if ( (curChar = 42) | (curChar = 43) | (curChar = 45) | (curChar = 47) ) {
+  			let op = curChar;
+  			let nChar = nChar + 1;
+  		}
+  		else {
+			do setStatus(5);
+			return this;
+  		}
+
+		// Skip spaces :
+		let nChar = EP.skipWhites(strInput, nChar);
+		if (nChar = nCharMax) {
+			do setStatus(6);
+			return this;
+		}
+		let curChar = strInput.charAt(nChar);
+
+  		// ------------------------------------------------------------- nOp2 :
+		let nChar = parseInt(strInput, nChar, 2);
+		if (~ isValid()) {
+			return this;
+		} 
+
+		let nChar = EP.skipWhites(strInput, nChar);
+		if (nChar = nCharMax) {
+			do setStatus(7);
+			return this;
+		}
+		let curChar = strInput.charAt(nChar);
+
+  		// -------------------------------------------------------------- '=' :
+  		if (curChar = 61) {
+  			let nChar = nChar + 1;
+  		}
+  		else {
+			do setStatus(8);
+			return this;
+  		}
+
+		let nChar = EP.skipWhites(strInput, nChar);
+		if (nChar = nCharMax) {
+			do setStatus(9);
+			return this;
+		}
+		let curChar = strInput.charAt(nChar);
+
+  		// ------------------------------------------------------------- nRes :
+		let nChar = parseInt(strInput, nChar, 3);
+		if (~ isValid()) {
+			return this;
+		}
+
+		// If characters remain after the result, they must be spaces :
+		if (nChar < nCharMax) {
+			let nChar = EP.skipWhites(strInput, nChar);
+			if (nChar < nCharMax) {
+				do setStatus(10);
+				return this;
+			}
+		}
+
+    	do setStatus(EP.checkResult(nOp1, op, nOp2, nRes));
+
+        return this;
+    }
+
+	// Returns first Operand :
+	method int getOp1() {
+		return nOp1;
+	}
+
+	// Sets first Operand :
+	method void setOp1(int nValue) {
+		let nOp1 = nValue;
+		return;
+	}
+
+	// Returns second Operand :
+	method int getOp2() {
+		return nOp2;
+	}
+
+	// Sets second Operand :
+	method void setOp2(int nValue) {
+		let nOp2 = nValue;
+		return;
+	}
+
+	// Sets result :
+	method void setResult(int nValue) {
+		let nRes = nValue;
+		return;
+	}
+
+	// Returns Operator :
+	method char getOp() {
+		return op;
+	}
+
+	// Returns result :
+	method int getRes() {
+		return nRes;
+	}
+
+	// Returns status :
+	method int getStatus() {
+		return nStatus;
+	}
+
+	// Returns object's validity :
+	method boolean isValid() {
+		return (nStatus = 0);
+	}
+
+	// Sets object's status :
+	method void setStatus(int nValue) {
+		let nStatus = nValue;
+		return;
+	}
+
+	// Returns expression error :
+	method String getError() {
+
+		if (nStatus < 17) {
+			return aEPStrings[nStatus];
+		}
+
+		return aEPStrings[17];
+	}
+
+	// Creates the constant strings of the class :
+	function void createStrings() {
+		let nEPStrCount = 18;
+
+		let aEPStrings = Array.new(nEPStrCount);
+
+		let aEPStrings[0] = "Valid expression";
+		let aEPStrings[1] = "Empty expression";
+		let aEPStrings[2] = "Arithmetically invalid expression";
+		let aEPStrings[3] = "Division by 0";
+		let aEPStrings[4] = "End of expression after operand 1";
+		let aEPStrings[5] = "Invalid operator";
+		let aEPStrings[6] = "End of expression after operator";
+		let aEPStrings[7] = "End of expression after operand 2";
+		let aEPStrings[8] = "'=' sign not found";
+		let aEPStrings[9] = "End of expression after '='";
+		let aEPStrings[10] = "Unexpected characters after result";
+		let aEPStrings[11] = "Unhandled status !!";
+		let aEPStrings[12] = "Unhandled status !!";
+		let aEPStrings[13] = "Unhandled status !!";
+		let aEPStrings[14] = "Missing operand 1";
+		let aEPStrings[15] = "Missing operand 2";
+		let aEPStrings[16] = "Missing result";
+		let aEPStrings[17] = "Unhandled status !!";
+
+		return;
+	}
+
+	// Frees constant strings memory : 
+	function void freeStrings() {
+		var int i;
+		var String s;
+		
+		let i = 0;
+		while (i < nEPStrCount) {
+			let s = aEPStrings[i];
+			do s.dispose();
+			let i = i + 1;
+		}
+		do aEPStrings.dispose();
+		return;
+	}
+
+	/** Disposes this object */
+	method void dispose() {
+		do EP.freeStrings();
+		do Memory.deAlloc(this);  // uses an OS routine to recycle the memory held by the object
+		return;
+	}
+}

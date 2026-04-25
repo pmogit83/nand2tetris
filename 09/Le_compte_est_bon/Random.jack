@@ -1,0 +1,66 @@
+// ============================================================================
+// Pseudo-random numbers generator (source : stackexchange) : 
+// Choose a 2-digit number, say 23, your "seed".
+// 
+// Form a new 2-digit number: the 10's digit plus 6 times the units digit.
+// 
+// The example sequence is 
+// 23 --> 20 --> 02 --> 12 --> 13 --> 19 --> 55 --> 35 --> ...
+// 
+// The "random digits" are the units digits of the 2-digit numbers, ie, 
+// 3,0,2,2,3,9,5,... the sequence mod 10.
+// 
+// NB : from the source, choose a seed from 1 to 58. 
+// ============================================================================
+
+/** ... */
+class Random {
+	field int seed;
+
+    /* We build a Random object from a integer */
+	constructor Random new(int nSeed) {
+    	let seed = nSeed;
+        return this;
+    }
+
+	// Returns a pseudo-random digit and updates seed :
+	method int rndDigit() {
+		var int nNewSeed, nRandom;
+		let nNewSeed = seed / 10;
+		let nRandom = seed - (10 * nNewSeed);
+		let seed = nNewSeed + (6 * nRandom);
+		return nRandom;
+	}
+
+	// Returns an integer in the [min, max] range :
+	method int Rnd(int min, int max) {
+		var int nDigit, nRNum;
+		var boolean bInRange;
+		var String s;
+		
+		let s = String.new(10);
+		let bInRange = false;
+
+		do s.setInt(max);
+		
+		while (~ bInRange) {
+			let nDigit = 1;
+			let nRNum = rndDigit();	
+			while (nDigit < s.length()) {
+				let nRNum = (10 * nRNum) + rndDigit();
+				let nDigit = nDigit + 1;
+			}
+			let bInRange = (~ ((nRNum < min) | (nRNum > max)));			
+		}
+		
+		do s.dispose();
+
+		return nRNum;
+	}
+
+	/** Disposes this object */
+	method void dispose() {
+		do Memory.deAlloc(this);  // uses an OS routine to recycle the memory held by the object
+		return;
+	}
+}
