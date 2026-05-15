@@ -1,0 +1,13 @@
+function Test.test 2
+push argument 0
+pop pointer 0
+push pointer 0
+push argument 1
+call Test.test 2
+pop local 1
+push local 0
+push argument 1
+call Test.test 2
+pop local 1
+push local 1
+return

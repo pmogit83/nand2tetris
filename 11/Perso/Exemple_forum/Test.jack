@@ -1,0 +1,50 @@
+// http://nand2tetris-questions-and-answers-forum.52.s1.nabble.com/Compiler-testing-method-td956608.html
+
+// La compilation du programme est censee produire le code VM suivant :
+/// 1: class Test {
+/// 2:     method int test(int x) {
+/// 3:         var Test t;
+/// 4:         var int y;
+// function Test.test 2            // 0
+// push argument 0                 // 1    this
+// pop pointer 0                   // 2    this
+// /// 5:         let y = test(x);
+// push pointer 0                  // 3    this
+// push argument 1                 // 4    x
+// call Test.test 2                // 5
+// pop local 1                     // 6    y
+// /// 6:         let y = t.test(x);
+// push local 0                    // 7    t
+// push argument 1                 // 8    x
+// call Test.test 2                // 9
+// pop local 1                     // 10    y
+// /// 7:         return y;
+// push local 1                    // 11    y
+// return                          // 12
+/// 8:     }
+/// 9: }
+
+// Idem sans les commentaires :
+// function Test.test 2
+// push argument 0
+// pop pointer 0
+// push pointer 0
+// push argument 1
+// call Test.test 2
+// pop local 1
+// push local 0
+// push argument 1
+// call Test.test 2
+// pop local 1
+// push local 1
+// return
+
+class Test {
+    method int test(int x) {
+        var Test t;
+        var int y;
+        let y = test(x);
+        let y = t.test(x);
+        return y;
+    }
+}
