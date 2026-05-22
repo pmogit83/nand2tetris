@@ -1,0 +1,208 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+
+/**
+ * A library of commonly used mathematical functions.
+ * Note: Jack compilers implement multiplication and division using OS method calls.
+ */
+class Math {
+	static Array a;
+	static int nMaxSR;
+
+    /** Initializes the library. */
+    function void init() {
+		// Puissances de 2 pour 16 bits :
+		let a = Array.new(16); // constructs the array
+
+		let a[0] = 1;
+		let a[1] = 2;
+		let a[2] = 4;
+		let a[3] = 8;
+		let a[4] = 16;
+		let a[5] = 32;
+		let a[6] = 64;
+		let a[7] = 128;
+		let a[8] = 256;
+		let a[9] = 512;
+		let a[10] = 1024;
+		let a[11] = 2048;
+		let a[12] = 4096;
+		let a[13] = 8192;
+		let a[14] = 16384;
+		let a[15] = 32767 + 1;		// Voir https://tinyurl.com/2s3ap9md !
+
+		// Max N pour 16 bits non signés = 65535 => max square root :
+		// let nMaxSR = 255;
+		// Max N pour 16 bits signés (complément à 2) = 32767 => max square 
+		// root (voir aussi doc p. 17) : 
+		let nMaxSR = 181;
+		
+		return;
+    }
+
+	/** Returns the greater number. */
+	function int max(int a, int b) {
+		if (a > b) {
+			return a;
+		}
+		return b;
+	}
+
+	/** Returns the smaller number. */
+	function int min(int a, int b) {
+		if (a < b) {
+			return a;
+		}
+		return b;
+	}
+
+	/** Returns the absolute value of x. */
+	function int abs(int x) {
+		// return Main.max(x, -x);
+		return Math.max(x, -x);
+	}
+
+    /** Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x*y and multiply(x,y) return the same value.
+     */
+	function int multiply(int x, int y) {
+		var int sum, shiftedX, j, bit;
+		let sum = 0;
+		let shiftedX = x;
+		let j = 0;
+		while (j < 16) {
+			let bit = Math.bitValue(y, j);
+			if (bit = 1) {
+				let sum = sum + shiftedX;
+			}
+			let shiftedX = shiftedX + shiftedX;
+			let j = j + 1;
+		}
+		return sum;
+	}
+
+	// Renvoie la valeur du bit nPos de nValue :
+	function int bitValue(int nValue, int bitPos) {
+		var int nBit;
+
+		let nBit = -(~((nValue & a[bitPos]) = 0));
+
+		return nBit;
+	} 
+
+    /** Returns the integer part of x/y.
+     *  When a Jack compiler detects the multiplication operator '/' in the 
+     *  program's code, it handles it by invoking this method. In other words,
+     *  the Jack expressions x/y and divide(x,y) return the same value.
+     */
+//     function int divide(int x, int y) {
+// 		var int q, z;
+// 
+// 		do Output.printString("x = "); do Output.printInt(x); do Output.printString("y = "); do Output.printInt(y); do Output.println();
+// 
+// 		if (y > x) {
+// 			return 0;
+// 		}
+// 		let q = Math.divide(x, 2 * y);
+// 		do Output.printString("q = "); do Output.printInt(q); do Output.println();
+// 	
+// 		let z = x - (2 * q * y);
+// 		do Output.printString("z = "); do Output.printInt(z); do Output.println();
+// 
+// 		// if (   (x – (  2 * (q * y) ) ) < y  ) { 	=>  KO !? 
+// 		if ( z < y) {
+// 			return (2 * q);
+// 		}
+// 		else {
+// 			return ((2 * q) + 1);
+// 		}
+//     }
+
+
+    function int divide(int a, int b) {
+		var int res, p, pprev, q, qprev, sign;
+
+		if (a = 0) {
+			return 0;
+		}
+
+		let sign = 1;
+		
+		if (((a < 0) & (b > 0)) | ((a > 0) & (b < 0))) {
+			let sign = -1;
+		}
+
+		let a = Math.abs(a); let b = Math.abs(b);
+		
+		if (b > a) {
+			return 0;
+		}
+
+		if (b = 1) {
+			return (sign * a);
+		}
+
+		// DIVISION_BY_ZERO_ERROR :
+		if (b = 0) {
+			return 0;
+		}
+
+		let res = 0;
+		
+		while (a > b) {
+			let p = b; let q = 1 ; let pprev = 0 ; let qprev = q ;
+			while (p < a) {
+				let pprev = p; let qprev = q ; 
+				let q = q * 2 ; let p = b * q ;
+			}
+			let res = res + qprev;
+			let a = a - pprev;
+		}
+		if (a = b) {
+			let res = res + 1;
+		}
+		return (res * sign);
+    }
+
+
+
+	/** Returns the integer part of the square root of x. */
+	function int sqrt(int x0) {
+		var int low, high, med, m2, m3, medprev;
+		let low = 0;
+		let high = nMaxSR;
+
+		while (low < high) {
+			let med = (low + high) / 2;
+			if (med = medprev) {
+				let med = med + 1;
+			}
+			let medprev = med;
+			let m2 = med * med;
+			if (m2 = x0) {
+				return med;
+			}
+			if (m2 > x0) {
+				let high = med;
+			}
+			// Dans le else, on a m2 < x0 :
+			else {
+				let m3 = (med + 1) * (med + 1);
+				if (x0 < m3) {
+					return med;
+				}
+				if (x0 = m3) {
+					return (med + 1);
+				}
+				// m3 < x0 
+				let low = med; 
+			}
+		}
+		return low;
+	}
+
+}

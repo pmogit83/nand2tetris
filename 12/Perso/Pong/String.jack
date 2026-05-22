@@ -1,0 +1,207 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/String.jack
+
+/**
+ * Represents character strings. In addition for constructing and disposing
+ * strings, the class features methods for getting and setting individual
+ * characters of the string, for erasing the string's last character,
+ * for appending a character to the string's end, and more typical
+ * string-oriented operations.
+ */
+class String {
+	field Array m_aString;
+	field int m_nMaxLength;
+
+	/** constructs a new empty string with a maximum length of maxLength
+	 *  and initial length of 0. */
+	constructor String new(int maxLength) {
+		let m_nMaxLength = maxLength + 1;
+		let m_aString = Array.new(m_nMaxLength);
+		// let m_aString = Memory.alloc(m_nMaxLength);
+		// Assure que la zone se termine par 0 :
+		let m_aString[maxLength] = 0;
+		// initial length of 0 :
+		let m_aString[0] = 0;
+
+		return this;
+	}
+
+	/** Disposes this string. */
+	method void dispose() {
+		do Memory.deAlloc(this);  // uses an OS routine to recycle the memory held by the object
+		return;
+	}
+
+    /** Returns the current length of this string. */
+    method int length() {
+		var int i;
+		
+		let i = 0;
+		while ( (i < m_nMaxLength) & (~ (m_aString[i] = 0) ) ) {
+			let i = i + 1;
+		}
+		
+		return i;
+    }
+
+    /** Returns the character at the j-th location of this string. */
+    method char charAt(int j) {
+		var char c;
+		let c = 0;
+		if (j < m_nMaxLength) {
+			let c = m_aString[j];
+		}
+		return c;
+    }
+
+    /** Sets the character at the j-th location of this string to c. */
+    method void setCharAt(int j, char c) {
+		if (j < m_nMaxLength) {
+			// FAUX en général !
+			let m_aString[j] = c;
+		}
+		return;
+    }
+
+    /** Appends c to this string's end and returns this string. */
+    method String appendChar(char c) {
+		var int l;
+
+// 		let l = m_aString.length();
+// 		do m_aString.setCharAt(l, c);
+// 		do m_aString.setCharAt(l+1, 0);
+		let l = length();
+		do setCharAt(l, c);
+		do setCharAt(l+1, 0);
+
+		return this;
+    }
+
+    /** Erases the last character from this string. */
+    method void eraseLastChar() {
+		var int l;
+		let l = length();
+		if (l > 0) {
+			do setCharAt(l-1, 0);
+		}
+		return;
+    }
+
+    /** Returns the integer value of this string, 
+     *  until a non-digit character is detected. */
+    method int intValue() {
+		var int n, l, i, sgn;
+		var char c;
+		var boolean bDigit;
+
+		let l = length();
+		if (l = 0) { return 0; }
+
+		let n = 0;
+
+		let i = 0;
+		let c = m_aString[i];
+
+		// Signe du nombre :
+		let sgn = 1;
+		// '+' ?
+		if (c = 43) { 
+			let i = i + 1;
+		}
+		// '-' ?
+		if (c = 45) {
+			let sgn = -1;
+			let i = i + 1;
+		}
+
+		let bDigit = true;
+		while ((i < l) & bDigit) {
+			let c = m_aString[i];
+			if ( (c > 47) & (c < 58) ) {
+				// ATTENTION : pas de détection d'overflow !!
+				let n = (n * 10) + (c - 48);
+				let i = i + 1;
+			}
+			else {
+				let bDigit = false;
+			}
+		}
+
+		let n = n * sgn;
+
+		return n;
+    }
+
+    /** Sets this string to hold a representation of the given value. */
+    // method void setInt(int val) {
+    method void setInt(int n) {
+		var int n2, nPos, q, r, i;
+		
+		let i = 0;
+		if ( (n < 0) & (m_nMaxLength > 1) ) {
+			let m_aString[i] = 45;
+			let i = i + 1;
+		}
+		
+		let n2 = Math.abs(n);
+		if (n2 < 10) {
+			let nPos = i + 1;
+		}
+		else { 
+			if (n2 < 100) {
+				let nPos = i + 2;
+			}
+			else {
+				if (n2 < 1000) {
+					let nPos = i + 3;
+				}
+				else {
+					if (n2 < 10000) {
+						let nPos = i + 4;
+					}
+					else {
+						let nPos = i + 5;
+					}
+				}
+			}
+		}
+
+		// Test non confirmé !
+		if (~(nPos < m_nMaxLength)) {
+			return;
+		}
+
+		// Terminaison non confirmée !
+		let m_aString[nPos] = 0; 
+
+		// while (nPos > 0) {
+		while (n2 > 0) {
+			let nPos = nPos - 1;
+			let q = n2 / 10 ; let r = n2 - (10 * q) ;
+			let m_aString[nPos] = r + 48;
+			let n2 = q ; 
+		}
+
+		return;
+    }
+
+    /** Returns the new line character. */
+    function char newLine() {
+		// Doc p. 17 ("ASCII" !?)
+		return 128;
+    }
+
+    /** Returns the backspace character. */
+    function char backSpace() {
+		// Doc p. 17 ("ASCII" !?)
+		return 129;
+    }
+
+    /** Returns the double quote (") character. */
+    function char doubleQuote() {
+		// Doc p. 17 ("ASCII" OK)
+		return 34;
+    }
+}

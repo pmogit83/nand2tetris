@@ -1,0 +1,123 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ * 
+ * Voir surtout lecture slides 52 -> 60 ; et, si besoin, livre p. 339 et 352
+ * 
+ */ 
+class Memory {
+	static Array aRAM, aHEAP;
+	static int HEAPBASE, HEAPSIZE, freeList, NEXTBLOCKINDEX, BLOCKSIZEINDEX;
+
+    /** Initializes the class. */
+    function void init() {
+		let aRAM = 0;							// adresse de la RAM
+		let HEAPBASE = 2048;					// adresse de la HEAP
+		let aHEAP = HEAPBASE;					// accès à la HEAP
+		let freeList = HEAPBASE;				// adresse freeList
+		let aHEAP[0] = 0;						// next block address 
+		let aHEAP[1] = 14334;					// initial block data size =
+												// 16383 - 2050 + 1
+
+		return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+		return aRAM[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+		let aRAM[address] = value;
+		return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. 
+     *  First fit algorithm (perso)
+		
+		Implementations tips :
+		Manage the linked freeList directly in the array heap
+		Realize the next and size properties of the memory segment
+		beginning at address addr as heap[addr – 1] and heap[addr – 2]
+		Implement alloc, deAlloc, and deFrag as operations on the heap array.
+
+     *  */
+    function int alloc(int size) {
+		var int nBlockAddress, nBlockSize, nNextBlockAddress, nHeapIndex, nRet;
+		var boolean bSearch;
+		
+		// Initialisation :
+		let bSearch = true;
+		let nRet = 0;			// invalid address if no block available
+
+		let nBlockAddress = freeList;
+		let nNextBlockAddress = aHEAP[0];
+		let nBlockSize = aHEAP[1];
+
+		// We leave the loop when we are on a block with sufficient size or   
+		// when no more block available :
+		while ( bSearch ) {
+			// Sufficient block size ?
+			if (nBlockSize > (size + 1)) {
+				// We modify the available size in the found block =>
+				// we convert nBlockAddress to an index for aHeap[]:
+				let nHeapIndex = nBlockAddress - HEAPBASE;
+				let aHEAP[nHeapIndex + 1] = nBlockSize - (size + 2);
+				// Then we compute the address of the data block to return :
+				let nRet = nBlockAddress + nBlockSize - size + 2;				
+				let nHeapIndex = nRet - HEAPBASE - 2;
+
+				// This block has no successor :
+				let aHEAP[nHeapIndex] = 0;				
+				// And we set the size of its datas :
+				let aHEAP[nHeapIndex + 1] = size;		
+				let bSearch = false;
+			}
+			else {
+				// Otherwise, proceed to the next block if possible :
+				if (nNextBlockAddress = 0) {
+					let bSearch = false;
+				}
+				else {
+					let nHeapIndex = nNextBlockAddress - HEAPBASE;
+					let nNextBlockAddress = aHEAP[nHeapIndex];
+					let nBlockSize = aHEAP[nHeapIndex + 1];
+				}
+			}
+		}
+		
+		return nRet;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+		var int nBlockAddress, nBlockSize, nNextBlockAddress, nHeapIndex;
+		
+		// Initialization :
+		let nBlockAddress = freeList;
+		let nNextBlockAddress = aHEAP[0];
+		let nBlockSize = aHEAP[1];
+	
+		// Find first block such as nNextBlockAddress = 0 :
+		while ( ~(nNextBlockAddress = 0) ) {
+			let nBlockAddress = nNextBlockAddress;
+			let nHeapIndex = nBlockAddress - HEAPBASE;
+			let nNextBlockAddress = aHEAP[nHeapIndex];
+			let nBlockSize = aHEAP[nHeapIndex + 1];
+		}
+
+		let aHEAP[nHeapIndex] = o - 2;
+
+		return;
+    }
+
+}
