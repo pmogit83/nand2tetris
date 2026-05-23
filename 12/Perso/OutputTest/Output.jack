@@ -18,14 +18,14 @@
  * as a small filled square, indicates where the next character will be displayed.
  */
 class Output {
-	static int m_nRow;		// Current Cursor Row
-	static int m_nCol;		// Current Cursor Column
-	static int m_nMaxRow;	// Max Row
-	static int m_nMaxCol;	// Max Column
-	static int nCharWidth;	// Char Width
-	static int nCharHeight;	// Char Height
-	static int nWpCL;		// Words per Char Line
-	static int m_nScreenBase;		// Screen Base Address
+	static int m_nRow;			// Current Cursor Row
+	static int m_nCol;			// Current Cursor Column
+	static int m_nMaxRow;		// Max Row
+	static int m_nMaxCol;		// Max Column
+	static int nCharWidth;		// Char Width
+	static int nCharHeight;		// Char Height
+	static int nWpCL;			// Words per Char Line
+	static int m_nScreenBase;	// Screen Base Address
 
 	static Array aBits;
     // Character map for displaying characters
@@ -40,13 +40,13 @@ class Output {
 		let m_nMaxCol = 63;
 		let nCharWidth = 8;
 		let nCharHeight = 11;
-		// nWpCL = nb de mots par ligne de caractères = 
-		// nWidth x nCharHeight / 16 avec nWidth = largeur écran en pixels = 
-		// 512 => 
+		// nWpCL = number of words per character line =
+		// nWidth x nCharHeight / 16 with nWidth = screen width in pixels =
+		// 512 =>
 		let nWpCL = 32 * nCharHeight;
 		let m_nScreenBase = 16384;
 
-		// Puissances de 2 pour 16 bits :
+		// Powers of 2 for 16 bits :
 		let aBits = Array.new(16); // constructs the array
 
 		let aBits[0] = 1;
@@ -64,12 +64,12 @@ class Output {
 		let aBits[12] = 4096;
 		let aBits[13] = 8192;
 		let aBits[14] = 16384;
-		let aBits[15] = 32767 + 1;		// Voir https://tinyurl.com/2s3ap9md !
+		let aBits[15] = 32767 + 1;		// See https://tinyurl.com/2s3ap9md !
 
 		return;
     }
 
-	// Renvoie la valeur du bit nPos de nValue :
+	// Returns the bit value of nValue at position nPos :
 	function int bitValue(int nValue, int bitPos) {
 		var int nBit;
 
@@ -126,7 +126,6 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        // do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);          // A ** TO BE FILLED **
 		do Output.create(65,48,120,204,204,252,204,204,204,204,0,0);	// A
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
@@ -229,27 +228,13 @@ class Output {
         return charMaps[c];
     }
 
-    // Returns the current cursor row (perso).
-//     function Array getRow() {
-//     	return m_nRow;
-//     }
-// 
-//     // Returns the current cursor column (perso).
-//     function Array getCol() {
-//     	return m_nCol;
-//     }
-
     /** Moves the cursor to the j-th column of the i-th row,
      *  and erases the character displayed there. */
     function void moveCursor(int i, int j) {
 		if ( ~( (i < 0) | (j < 0) | (i > m_nMaxRow) | (j > m_nMaxCol) ) ) {
 			let m_nRow = i;
 			let m_nCol = j;
-			// do Output.printChar(" ");
 			do Output.printCharOnly(32);
-			// Annule l'effet de déplacement du curseur dans printChar() :
-			// let m_nRow = i;
-			// let m_nCol = j;			
 		}
 		return;
     }
@@ -264,42 +249,41 @@ class Output {
 		return;
     }
 
-	/* Force à nByte l'octet le moins significatif (Least Significant Byte) du 
-		mot de 16 bits situé à l'adresse nMemAddr. 							*/
+	/* Force the least significant byte (LSB) of the 16-bit word at address 
+		nMemAddr to nByte. */
 	function void setLSB(int nMemAddr, int nByte) {
 		var int nWord, nNewWord;
 		
-		// Valeur actuelle du mot situé à l'adresse nMemAddr :
+		// Current value of the word located at nMemAddr address :
 		let nWord = Memory.peek(nMemAddr);
 
-		// 65280 = 255 * (2^8) = 1111 1111 0000 0000 => nWord & 65280 conserve 
-		// les 8 bits de poids fort de nWord et met à 0 les autres :
+		// 65280 = 255 * (2^8) = 1111 1111 0000 0000 => nWord & 65280 keeps
+		// the 8 most significant bits of nWord and sets the others to 0 :
 		let nNewWord = nWord & (-256);
 
-		// Les 8 bits de poids faible de nNewWord sont maintenant forcés à 
-		// nByte :
+		// The 8 least significant bits of nNewWord are now forced to nByte:
 		let nNewWord = nNewWord + nByte;
 		
-		// Stocker nNewWord à l'adresse nMemAddr :
+		// Store nNewWord at nMemAddr address :
 		do Memory.poke(nMemAddr, nNewWord);
 
 		return;
 	}
 
-	/* Force à nByte l'octet le plus significatif (Most Significant Byte) du 
-		mot de 16 bits situé à l'adresse nMemAddr. 							 */
+	/* Force the most significant byte (MSB) of the 16-bit word at address 
+		nMemAddr to nByte. */
 	function void setMSB(int nMemAddr, int nByte) {
 		var int nWord, nNewWord;
 		
-		// Valeur actuelle du mot situé à l'adresse nMemAddr :
+		// Current value of the word located at nMemAddr address :
 		let nWord = Memory.peek(nMemAddr);
 
-		// 255 = 0000 0000 1111 1111 => nWord & 255 conserve les 8 bits de 
-		// poids faible de nWord et met à 0 les 8 bits de poids fort => 
-		// nNewWord = 0000 0000 < LSB(nWord) >
+		// 255 = 0000 0000 1111 1111 => nWord & 255 keeps the 8 least 
+		// significant bits of nWord and sets the 8 most significant bits to 0
+		//  => nNewWord = 0000 0000 < LSB(nWord) >
 		let nNewWord = nWord & 255;
 		
-		// Tous les bits de nByte sont décalés de 8 bits vers la gauche => 
+		// All bits of nByte are 8-bits shifted to the left => 
 		// nByte = < nByte > 0000 0000 
 		let nByte = nByte * 256;
 
@@ -307,32 +291,32 @@ class Output {
 		// < nByte > < LSB(nWord) > :
 		let nNewWord = nNewWord + nByte;
 
-		// Stocker nNewWord à l'adresse nMemAddr :
+		// Store nNewWord at nMemAddr address :
 		do Memory.poke(nMemAddr, nNewWord);
 
 		return;
 	}
 
     /** Displays the given character at the cursor location but does not 
-     *  advance the cursor one column forward (perso). */
+     *  advance the cursor one column forward. */
     function void printCharOnly(char c) {
 		var int bitCol, bitRow, bitMap, bit, q2, nWord;
 		var boolean bEven;
 		var Array aChar;
 		
-		// On doit modifier le LSB ou le MSB d'un mot de 16 bits. Le choix est 
-		// fonction de la parité de x0 : 
+		// We need to modify the LSB or MSB of a 16-bit word. The choice 
+		// depends on the parity of x0 :
 		let q2 = m_nCol / 2;
 		let bEven = (m_nCol = (2 * q2));
 
-		// exemple : a = 97 =>
+		// example : a = 97 =>
 		// do Output.create(97,0,0,0,14,24,30,27,27,54,0,0);
 		let aChar = Output.getMap(c);
 		
-		// Numéro du premier mot de 16 bits à modifier :
+		// First 16-bit word number to modify :
 		let nWord = q2 + (m_nRow * nWpCL);
 
-		let bitRow = 0;		// index de la bitMap
+		let bitRow = 0;		// bitMap index
 		if (bEven) {
 			while (bitRow < nCharHeight) {
 				let bitMap = aChar[bitRow];
@@ -353,10 +337,10 @@ class Output {
 		return;
 	}
 
-	// Perso :
 	function int getRow() {
 		return m_nRow;
 	}
+
 	function int getCol() {
 		return m_nCol;
 	}
@@ -373,10 +357,9 @@ class Output {
 			let m_nRow = m_nRow + 1;
 			if (m_nRow > m_nMaxRow) {
 				let m_nRow = 0;
-				// Pas clair : ce qu'on voit dans 
-				// OutputTest\OutputTestOutput.gif (on recommence à afficher 
-				// les caractères en haut à gauche de l'écran) contredit la 
-				// doc Ch. 12 1.5.3 p. 12
+				// Unclear: what is seen in OutputTest\OutputTestOutput.gif
+				// (characters are redisplayed from the top-left of the screen) 
+				// contradicts the documentation Ch. 12 1.5.3 p. 12
 			}
 		}
 		return;
@@ -398,7 +381,7 @@ class Output {
      *  and advances the cursor appropriately. */
     function void printInt(int i) {
         var String s;
-		// "-32768" + 0 final => 7 caractères :
+		// "-32768" + final 0 => 7 characters :
         let s = String.new(7);
         do s.setInt(i);
 		do Output.printString(s);

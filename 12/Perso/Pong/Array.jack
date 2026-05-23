@@ -12,8 +12,6 @@
  * data types.
  */
 class Array {
-// 	field int m_nOffset;
-// 	field int m_nLength;
 	static int m_nOffset;
 	static int m_nLength;
 
@@ -21,7 +19,6 @@ class Array {
     function Array new(int size) {
 		let m_nLength = size;
 		let m_nOffset = Memory.alloc(m_nLength);
-		// return this;
 		return m_nOffset;
     }
 

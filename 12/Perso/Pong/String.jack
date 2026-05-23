@@ -19,8 +19,7 @@ class String {
 	constructor String new(int maxLength) {
 		let m_nMaxLength = maxLength + 1;
 		let m_aString = Array.new(m_nMaxLength);
-		// let m_aString = Memory.alloc(m_nMaxLength);
-		// Assure que la zone se termine par 0 :
+		// Insure a 0 terminated array :
 		let m_aString[maxLength] = 0;
 		// initial length of 0 :
 		let m_aString[0] = 0;
@@ -59,7 +58,6 @@ class String {
     /** Sets the character at the j-th location of this string to c. */
     method void setCharAt(int j, char c) {
 		if (j < m_nMaxLength) {
-			// FAUX en général !
 			let m_aString[j] = c;
 		}
 		return;
@@ -69,9 +67,6 @@ class String {
     method String appendChar(char c) {
 		var int l;
 
-// 		let l = m_aString.length();
-// 		do m_aString.setCharAt(l, c);
-// 		do m_aString.setCharAt(l+1, 0);
 		let l = length();
 		do setCharAt(l, c);
 		do setCharAt(l+1, 0);
@@ -104,7 +99,7 @@ class String {
 		let i = 0;
 		let c = m_aString[i];
 
-		// Signe du nombre :
+		// Sign of the number :
 		let sgn = 1;
 		// '+' ?
 		if (c = 43) { 
@@ -120,7 +115,7 @@ class String {
 		while ((i < l) & bDigit) {
 			let c = m_aString[i];
 			if ( (c > 47) & (c < 58) ) {
-				// ATTENTION : pas de détection d'overflow !!
+				// ATTENTION : no overflow detection !!
 				let n = (n * 10) + (c - 48);
 				let i = i + 1;
 			}
@@ -135,7 +130,6 @@ class String {
     }
 
     /** Sets this string to hold a representation of the given value. */
-    // method void setInt(int val) {
     method void setInt(int n) {
 		var int n2, nPos, q, r, i;
 		
@@ -168,15 +162,13 @@ class String {
 			}
 		}
 
-		// Test non confirmé !
+		// Test not confirmed !
 		if (~(nPos < m_nMaxLength)) {
 			return;
 		}
 
-		// Terminaison non confirmée !
 		let m_aString[nPos] = 0; 
 
-		// while (nPos > 0) {
 		while (n2 > 0) {
 			let nPos = nPos - 1;
 			let q = n2 / 10 ; let r = n2 - (10 * q) ;

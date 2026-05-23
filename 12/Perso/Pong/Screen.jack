@@ -10,11 +10,11 @@
  * the screen is indexed (0,0).
  */
 class Screen {
-	static boolean m_bColor;			// Current Pixel Color (true => black)
+	static boolean m_bColor;		// Current Pixel Color (true => black)
 	static int m_nMaxRow;			// Max Pixel Row
 	static int m_nMaxCol;			// Max Pixel Line
 	static int m_nScreenBase;		// Screen Base Address
-	static Array aMask0, aMask1;	// Masques des manipulations de bits 
+	static Array aMask0, aMask1;	// Bit manipulation masks 
 
 	function boolean invalidRow(int nRow) {
 		return (  (nRow < 0) | (nRow > m_nMaxRow) );
@@ -34,8 +34,8 @@ class Screen {
 
 		do Screen.setColor(true);
 
-//		----------------- Initialisation aMask0[] = masque de forçage à 0 du 
-//		bit c d'un mot de 16 bits :
+//		----------------- Initialisation aMask0[] = Mask to clear bit c in a 
+//      16-bit word
 // 		0111111111111111 = 32767  = 32768 - 1    = 2^15 - 1
 // 		1011111111111111 = -16385 = -(16384 + 1) = -(2^14 + 1)
 // 		1101111111111111 = -8193  = -(8192 + 1)  = -(2^13 + 1)
@@ -52,8 +52,8 @@ class Screen {
 			let c = c - 1; 
 		}
 
-//		----------------- Initialisation aMask1[] = masque de forçage à 1 du 
-//		bit c d'un mot de 16 bits :
+//		----------------- Initialisation aMask1[] = Mask to set bit c in a 
+//      16-bit word
 // 		1000000000000000 = -32768 = -2^15
 // 		0100000000000000 = 16384  =  2^14
 // 		0010000000000000 = 8192   =  2^13
@@ -74,9 +74,9 @@ class Screen {
 
     /** Erases the entire screen. */
     function void clearScreen() {
-		// On a (m_nMaxRow + 1) x (m_nMaxCol + 1) pixels sur l'écran à partir 
-		// de l'adresse m_nScreenBase ; soit 256 x 512 / 16 = 8192 mots à 
-		// mettre à 0 pour effacer l'écran.
+		// We have (m_nMaxRow + 1) x (m_nMaxCol + 1) pixels on the screen 
+		// starting from address m_nScreenBase; that is, 256 x 512 / 16 = 8192 
+		// words to set to 0 to clear the screen.
 		var int nWord;
 		let nWord = 0;
 		while (nWord < 8192) {
@@ -115,7 +115,9 @@ class Screen {
 		let q = x / 16;
 		let nMemAddr = m_nScreenBase + (32 * y) + q;
 		let nMemVal = Memory.peek(nMemAddr);
-		let nBitNum = x - (16 * q);
+		// let nBitNum = x - (16 * q);
+		// __ Optimization : check done by caller
+		let nBitNum = x & 15;
 
 		// Set the (x % 16)th bit of value to the current color
 		if (m_bColor) {
@@ -129,7 +131,7 @@ class Screen {
 		return;
     }
 
-	// Perso :
+	// Draws a vertical or horizontal line :
     function void drawStraightLine(int x1, int y1, int x2, int y2) {
 		var int dx, dy, x, y;
 		
@@ -156,9 +158,10 @@ class Screen {
     function void drawLine(int x1, int y1, int x2, int y2) {
 		var int a, b, x, y, dx, dy, diff;
 
-		if ( Screen.invalidRow(y1) | Screen.invalidCol(x1) | Screen.invalidRow(y2) | Screen.invalidCol(x2) ) {
-			return;
-		}
+		// __ Optimization : check done by caller
+// 		if ( Screen.invalidRow(y1) | Screen.invalidCol(x1) | Screen.invalidRow(y2) | Screen.invalidCol(x2) ) {
+// 			return;
+// 		}
 
 		let x = x1; let y = y1; let dx = x2 - x1; let dy = y2 - y1;
 		

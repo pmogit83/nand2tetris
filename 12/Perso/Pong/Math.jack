@@ -13,7 +13,7 @@ class Math {
 
     /** Initializes the library. */
     function void init() {
-		// Puissances de 2 pour 16 bits :
+		// Powers of 2 for 16 bits :
 		let a = Array.new(16); // constructs the array
 
 		let a[0] = 1;
@@ -31,12 +31,12 @@ class Math {
 		let a[12] = 4096;
 		let a[13] = 8192;
 		let a[14] = 16384;
-		let a[15] = 32767 + 1;		// Voir https://tinyurl.com/2s3ap9md !
+		let a[15] = 32767 + 1;		// See https://tinyurl.com/2s3ap9md !
 
-		// Max N pour 16 bits non signés = 65535 => max square root :
+		// Max N for 16-bit unsigned = 65535 => max square root :
 		// let nMaxSR = 255;
-		// Max N pour 16 bits signés (complément à 2) = 32767 => max square 
-		// root (voir aussi doc p. 17) : 
+		// Max N for 16-bit signed (two's complement) = 32767 => max square
+		// root (see also doc p. 17) :
 		let nMaxSR = 181;
 		
 		return;
@@ -60,7 +60,6 @@ class Math {
 
 	/** Returns the absolute value of x. */
 	function int abs(int x) {
-		// return Main.max(x, -x);
 		return Math.max(x, -x);
 	}
 
@@ -85,7 +84,7 @@ class Math {
 		return sum;
 	}
 
-	// Renvoie la valeur du bit nPos de nValue :
+	// Returns the bit value of nValue at position nPos :
 	function int bitValue(int nValue, int bitPos) {
 		var int nBit;
 
@@ -99,30 +98,6 @@ class Math {
      *  program's code, it handles it by invoking this method. In other words,
      *  the Jack expressions x/y and divide(x,y) return the same value.
      */
-//     function int divide(int x, int y) {
-// 		var int q, z;
-// 
-// 		do Output.printString("x = "); do Output.printInt(x); do Output.printString("y = "); do Output.printInt(y); do Output.println();
-// 
-// 		if (y > x) {
-// 			return 0;
-// 		}
-// 		let q = Math.divide(x, 2 * y);
-// 		do Output.printString("q = "); do Output.printInt(q); do Output.println();
-// 	
-// 		let z = x - (2 * q * y);
-// 		do Output.printString("z = "); do Output.printInt(z); do Output.println();
-// 
-// 		// if (   (x – (  2 * (q * y) ) ) < y  ) { 	=>  KO !? 
-// 		if ( z < y) {
-// 			return (2 * q);
-// 		}
-// 		else {
-// 			return ((2 * q) + 1);
-// 		}
-//     }
-
-
     function int divide(int a, int b) {
 		var int res, p, pprev, q, qprev, sign;
 

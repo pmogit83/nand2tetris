@@ -7,14 +7,13 @@
  * A library for handling user input from the keyboard.
  */
 class Keyboard {
-	static int m_nKeyboardReg;		// // Keyboard register
-	static int m_nLineMaxLength;	// Longueur max d'une ligne
+	static int m_nKeyboardReg;		// Keyboard register
+	static int m_nLineMaxLength;	// Max length of a line
 
     /** Initializes the keyboard. */
     function void init() {
 		let m_nKeyboardReg = 24576;
-		let m_nLineMaxLength = 63;	// arbitraire
-		// ...
+		let m_nLineMaxLength = 63;	// arbitrary
 		
 		return;
     }
@@ -41,18 +40,6 @@ class Keyboard {
      */
     function char keyPressed() {
 		return Memory.peek(m_nKeyboardReg);
-// 		var int nScanCode;
-// 		// var char cKey;
-// 		let nScanCode = Memory.peek(m_nKeyboardReg);
-// 		if (nScanCode = 0) { 
-// 			return 0 ; 
-// 		}
-// 
-// 		// if ((c < 32) | (c > 126)) 
-// 
-// 		// ...
-// 		
-// 		return;
     }
 
 	function boolean isPrintable(char c) {
@@ -83,13 +70,12 @@ class Keyboard {
 		}
 
 		// Display c at the current cursor location :
-		// if (~ (c0 = String.backSpace() ) ) {
 		if (Keyboard.isPrintable(c0)) {
 			do Output.printChar(c0);
 		}
 		else {
 			if (c0 = String.newLine()) {
-				// Efface le curseur :
+				// Clear cursor :
 				do Output.printCharOnly(32);
 			}
 		}
@@ -105,11 +91,10 @@ class Keyboard {
     function String readLine(String message) {
 		var String s;
 		var char c;
-//		var int nRow, nCol;
 		
 		do Output.printString(message);
 
-		// + 1 pour le '\0' final :
+		// + 1 for the final '\0' :
 		let s = String.new(m_nLineMaxLength + 1);
 		let c = 0;
 		while (c = 0) {
@@ -149,15 +134,13 @@ class Keyboard {
 		
 		do Output.printString(message);
 
-		// + 1 pour le '\0' final :
+		// + 1 for the final '\0' :
 		let s = String.new(m_nLineMaxLength + 1);
 		let c = 0;
  		while (c = 0) {
  			let c = Keyboard.readChar();
  			if (c = String.newLine()) {
-				// do Output.printCharOnly(32);
  				do Output.println();
- 				// let nRead = String.intValue(s);
  				let nRead = s.intValue();
  				return nRead;
  			}

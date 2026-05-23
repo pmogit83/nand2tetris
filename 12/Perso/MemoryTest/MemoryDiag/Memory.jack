@@ -56,50 +56,37 @@ class Memory {
 		
 		// Initialisation :
 		let bSearch = true;
-		let nRet = 0;			// adresse invalide si pas de bloc disponible
+		let nRet = 0;			// invalid address if no block available
 
-// 		let nBlockAddress = freeList;
-// 		let nNextBlockAddress = Memory.peek(nBlockAddress + NEXTBLOCKINDEX); 
-// 		let nBlockSize = Memory.peek(nBlockAddress + BLOCKSIZEINDEX);
 		let nBlockAddress = freeList;
-		// do Output.printString("nBlockAddress = "); do Output.printInt(nBlockAddress); do Output.println();
 		let nNextBlockAddress = aHEAP[0];
-		// do Output.printString("nNextBlockAddress = "); do Output.printInt(nNextBlockAddress); do Output.println();
 		let nBlockSize = aHEAP[1];
-		// do Output.printString("nBlockSize = "); do Output.printInt(nBlockSize); do Output.println();
 
-		// On sort de la boucle quand on est sur un bloc de taille suffisante 
-		// ou quand on n'a plus de bloc disponible :
+		// We leave the loop when we are on a block with sufficient size or   
+		// when no more block available :
 		while ( bSearch ) {
-			// Bloc de taille suffisante ?
+			// Sufficient block size ?
 			if (nBlockSize > (size + 1)) {
-				// On modifie la taille dispo dans le bloc trouvé => on 
-				// convertit nBlockAddress en index pour aHeap[] :
+				// We modify the available size in the found block =>
+				// we convert nBlockAddress to an index for aHeap[]:
 				let nHeapIndex = nBlockAddress - HEAPBASE;
-				// let aHEAP[nHeapIndex + 1] = nBlockSize - size - 1;
 				let aHEAP[nHeapIndex + 1] = nBlockSize - (size + 2);
-				// Puis on calcule l'adresse du bloc de données à renvoyer :
+				// Then we compute the address of the data block to return :
 				let nRet = nBlockAddress + nBlockSize - size + 2;				
 				let nHeapIndex = nRet - HEAPBASE - 2;
 
-				// Ce bloc n'a pas de successeur :
+				// This block has no successor :
 				let aHEAP[nHeapIndex] = 0;				
-				// let aHEAP[nHeapIndex] = 9999;				
-				// Et on indique la taille de ses données :
+				// And we set the size of its datas :
 				let aHEAP[nHeapIndex + 1] = size;		
-				// let aHEAP[nHeapIndex + 1] = 9998;		
-
-
-
 				let bSearch = false;
 			}
 			else {
-				// Sinon, on passe au bloc suivant si possible :
+				// Otherwise, proceed to the next block if possible :
 				if (nNextBlockAddress = 0) {
 					let bSearch = false;
 				}
 				else {
-					// On convertit nNextBlockAddress en index pour aHeap[] :
 					let nHeapIndex = nNextBlockAddress - HEAPBASE;
 					let nNextBlockAddress = aHEAP[nHeapIndex];
 					let nBlockSize = aHEAP[nHeapIndex + 1];
@@ -115,12 +102,12 @@ class Memory {
     function void deAlloc(Array o) {
 		var int nBlockAddress, nBlockSize, nNextBlockAddress, nHeapIndex;
 		
-		// Initialisation :
+		// Initialization :
 		let nBlockAddress = freeList;
 		let nNextBlockAddress = aHEAP[0];
 		let nBlockSize = aHEAP[1];
 	
-		// Trouver le premier bloc tel que nNextBlockAddress = 0 :
+		// Find first block such as nNextBlockAddress = 0 :
 		while ( ~(nNextBlockAddress = 0) ) {
 			let nBlockAddress = nNextBlockAddress;
 			let nHeapIndex = nBlockAddress - HEAPBASE;

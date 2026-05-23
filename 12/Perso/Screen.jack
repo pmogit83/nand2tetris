@@ -115,7 +115,9 @@ class Screen {
 		let q = x / 16;
 		let nMemAddr = m_nScreenBase + (32 * y) + q;
 		let nMemVal = Memory.peek(nMemAddr);
-		let nBitNum = x - (16 * q);
+		// let nBitNum = x - (16 * q);
+		// __ Optimization : 
+		let nBitNum = x & 15;
 
 		// Set the (x % 16)th bit of value to the current color
 		if (m_bColor) {
@@ -156,9 +158,10 @@ class Screen {
     function void drawLine(int x1, int y1, int x2, int y2) {
 		var int a, b, x, y, dx, dy, diff;
 
-		if ( Screen.invalidRow(y1) | Screen.invalidCol(x1) | Screen.invalidRow(y2) | Screen.invalidCol(x2) ) {
-			return;
-		}
+		// __ Optimization : check done by caller
+// 		if ( Screen.invalidRow(y1) | Screen.invalidCol(x1) | Screen.invalidRow(y2) | Screen.invalidCol(x2) ) {
+// 			return;
+// 		}
 
 		let x = x1; let y = y1; let dx = x2 - x1; let dy = y2 - y1;
 		

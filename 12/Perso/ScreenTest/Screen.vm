@@ -175,10 +175,8 @@ push local 0
 call Memory.peek 1
 pop local 1
 push argument 0
-push constant 16
-push local 3
-call Math.multiply 2
-sub
+push constant 15
+and
 pop local 2
 push static 0
 if-goto IF_TRUE1
@@ -288,23 +286,6 @@ label IF_END0
 push constant 0
 return
 function Screen.drawLine 7
-push argument 1
-call Screen.invalidRow 1
-push argument 0
-call Screen.invalidCol 1
-or
-push argument 3
-call Screen.invalidRow 1
-or
-push argument 2
-call Screen.invalidCol 1
-or
-if-goto IF_TRUE0
-goto IF_FALSE0
-label IF_TRUE0
-push constant 0
-return
-label IF_FALSE0
 push argument 0
 pop local 2
 push argument 1
@@ -324,9 +305,9 @@ push local 5
 push constant 0
 eq
 or
-if-goto IF_TRUE1
-goto IF_FALSE1
-label IF_TRUE1
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
 push argument 0
 push argument 1
 push argument 2
@@ -335,20 +316,20 @@ call Screen.drawStraightLine 4
 pop temp 0
 push constant 0
 return
-label IF_FALSE1
+label IF_FALSE0
 push local 4
 push constant 0
 lt
-if-goto IF_TRUE2
-goto IF_FALSE2
-label IF_TRUE2
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
 push argument 2
 push argument 3
 push argument 0
 push argument 1
 call Screen.drawLine 4
 pop temp 0
-label IF_FALSE2
+label IF_FALSE1
 push constant 0
 pop local 0
 push constant 0
@@ -362,9 +343,9 @@ push local 5
 push constant 0
 gt
 and
-if-goto IF_TRUE3
-goto IF_FALSE3
-label IF_TRUE3
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
 label WHILE_EXP0
 push local 0
 push local 4
@@ -387,9 +368,9 @@ pop temp 0
 push local 6
 push constant 0
 lt
-if-goto IF_TRUE4
-goto IF_FALSE4
-label IF_TRUE4
+if-goto IF_TRUE3
+goto IF_FALSE3
+label IF_TRUE3
 push local 0
 push constant 1
 add
@@ -398,8 +379,8 @@ push local 6
 push local 5
 add
 pop local 6
-goto IF_END4
-label IF_FALSE4
+goto IF_END3
+label IF_FALSE3
 push local 1
 push constant 1
 add
@@ -408,12 +389,12 @@ push local 6
 push local 4
 sub
 pop local 6
-label IF_END4
+label IF_END3
 goto WHILE_EXP0
 label WHILE_END0
 push constant 0
 return
-label IF_FALSE3
+label IF_FALSE2
 push local 4
 push constant 0
 gt
@@ -421,9 +402,9 @@ push local 5
 push constant 0
 lt
 and
-if-goto IF_TRUE5
-goto IF_FALSE5
-label IF_TRUE5
+if-goto IF_TRUE4
+goto IF_FALSE4
+label IF_TRUE4
 label WHILE_EXP1
 push local 0
 push local 4
@@ -446,9 +427,9 @@ pop temp 0
 push local 6
 push constant 0
 lt
-if-goto IF_TRUE6
-goto IF_FALSE6
-label IF_TRUE6
+if-goto IF_TRUE5
+goto IF_FALSE5
+label IF_TRUE5
 push local 0
 push constant 1
 add
@@ -457,8 +438,8 @@ push local 6
 push local 5
 sub
 pop local 6
-goto IF_END6
-label IF_FALSE6
+goto IF_END5
+label IF_FALSE5
 push local 1
 push constant 1
 sub
@@ -467,12 +448,12 @@ push local 6
 push local 4
 sub
 pop local 6
-label IF_END6
+label IF_END5
 goto WHILE_EXP1
 label WHILE_END1
 push constant 0
 return
-label IF_FALSE5
+label IF_FALSE4
 push constant 0
 return
 function Screen.drawRectangle 1
