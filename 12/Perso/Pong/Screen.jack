@@ -116,7 +116,7 @@ class Screen {
 		let nMemAddr = m_nScreenBase + (32 * y) + q;
 		let nMemVal = Memory.peek(nMemAddr);
 		// let nBitNum = x - (16 * q);
-		// __ Optimization : check done by caller
+		// __ Optimization : 
 		let nBitNum = x & 15;
 
 		// Set the (x % 16)th bit of value to the current color
